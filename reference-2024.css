@@ -1,0 +1,429 @@
+/*
+ * 2024 recording coordinates: 883 × 1920 → 402 × 874, minus 47 px
+ * of the system status bar. The remaining app is 402 × 827; nav is 52 px.
+ * User-approved differences: folded paper / aircraft, six standards, flat cards,
+ * a green save button. Load this file after styles.css.
+ */
+:root {
+  font-family: RefSans, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  color: #080b09;
+  background: #edf0ed;
+  --reference-width: 402px;
+  --reference-height: 827px;
+  --reference-nav: 52px;
+  --reference-main: 775px;
+}
+
+body { padding: 16px 0; }
+.phone,
+.phone[data-view="result"],
+.phone[data-view="cards"] {
+  width: var(--reference-width);
+  height: var(--reference-height);
+  min-height: var(--reference-height);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  zoom: var(--preview-scale, 1);
+}
+.phone main { position: relative; height: var(--reference-main); }
+.phone .page {
+  position: relative;
+  width: 100%;
+  height: var(--reference-main);
+  min-height: var(--reference-main);
+  max-height: none;
+  flex: none;
+}
+.phone .wechat,
+.phone[data-view="result"] .wechat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--reference-nav);
+  min-height: var(--reference-nav);
+  padding: 0 14px;
+  color: #111;
+  background: #fff;
+  z-index: 30;
+}
+.wechat span { font: 500 17px/24px RefSans, sans-serif; letter-spacing: 0; }
+.wechat button { width: 30px; height: 42px; padding: 0; font-size: 31px; font-weight: 300; line-height: 42px; }
+.wechat button:last-child { font-size: 19px; letter-spacing: 1px; }
+.phone .primary {
+  height: 56px;
+  border-radius: 999px;
+  background: #00c976;
+  color: #fff;
+  font: 600 17px/1 RefSans, sans-serif;
+  box-shadow: none;
+}
+.phone .primary:disabled { background: #00c976; opacity: .36; }
+.phone .flight { inset: var(--reference-nav) 0 0; }
+
+/* Vote: title y114, artwork y208, paper heart y584, counter y727. */
+.phone .vote {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(#fff 0%, #f8f8f8 47%, #fff 78%, var(--soft) 100%);
+}
+.vote .work-meta,
+.vote .ad-navigation { display: none; }
+.vote .vote-heading {
+  position: absolute;
+  inset: 61px 15px auto;
+  height: 65px;
+  min-height: 0;
+  margin: 0;
+  z-index: 2;
+  text-align: center;
+}
+.vote-heading h1 {
+  font: 700 22px/31px RefSans, sans-serif;
+  letter-spacing: 0;
+}
+.vote-heading p {
+  margin-top: 8px;
+  color: var(--accent);
+  font: 600 15px/24px RefSans, sans-serif;
+  letter-spacing: 1px;
+}
+.vote-heading b { font: 700 20px/24px RefSans, sans-serif; letter-spacing: .2px; }
+.vote .carousel {
+  position: absolute;
+  top: 156px;
+  left: 0;
+  width: 100%;
+  height: 510px;
+  min-height: 0;
+  max-height: none;
+  flex: none;
+  perspective: 1200px;
+  overflow: visible;
+}
+.vote .ad-card {
+  position: relative;
+  width: 301px;
+  max-width: none;
+  height: 510px;
+  min-height: 0;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 22px 22px 7px 7px;
+  overflow: hidden;
+  background: linear-gradient(#fff 0%, #fff 70%, #ffffff3d 100%);
+  box-shadow: none;
+  transform-origin: 50% 85%;
+}
+.vote .ad-clone { position: absolute; left: 50.5px; top: 0; margin: 0; }
+.vote .ad-image {
+  flex: none;
+  height: 329px;
+  padding: 15px 15px 0;
+  overflow: hidden;
+}
+.vote .ad-image img { display: block; width: 100%; height: auto; max-width: none; }
+.vote .ad-image::after { height: 22px; background: linear-gradient(transparent, #fff); }
+.vote .card-air { display: none; }
+.vote .heart-area {
+  position: absolute;
+  top: 375px;
+  left: 0;
+  right: 0;
+  height: 111px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.vote .heart-button,
+.vote #voted,
+.vote .ad-clone .voted-state {
+  position: relative;
+  width: 120px;
+  height: 110px;
+  margin: 0;
+  filter: drop-shadow(0 3px 3px #467b4a0a);
+}
+.vote .heart-button:hover { transform: translateY(-2px); }
+.vote .heart-copy { top: 32px; gap: 4px; }
+.vote .heart-copy b { font: 700 21px/25px RefSans, sans-serif; letter-spacing: 1px; }
+.vote .heart-copy small { max-width: 96px; font: 500 10px/14px RefSans, sans-serif; }
+.vote #voted .voted-icon,
+.vote .ad-clone .voted-state .voted-icon { width: 100%; height: 100%; opacity: .24; }
+.vote #voted > b,
+.vote .ad-clone .voted-state > b { top: 38px; margin: 0; font: 500 14px/20px RefSans, sans-serif; }
+.vote #replay,
+.vote .ad-clone .voted-state button { top: 110px; padding: 3px 0; font: 400 10px/16px RefSans, sans-serif; }
+.vote .vote-bottom {
+  position: absolute;
+  top: 673px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  z-index: 3;
+}
+.vote-bottom > p { color: #a4a5a0; font: 400 14px/22px RefSans, sans-serif; letter-spacing: .2px; }
+.vote-bottom b { color: inherit; font-weight: 500; }
+.vote #next { display: block; margin: 2px auto 0; padding: 0; color: #a4a5a0; font: 400 14px/23px RefSans, sans-serif; }
+.vote #next:disabled { color: #aaada8; }
+.vote #next span { display: none; }
+
+/* Selection: a single scrolling sentence column, fixed confirmation below. */
+.phone .choose { display: block; padding: 0; overflow: hidden; background: #fff; }
+.choose-heading {
+  position: absolute;
+  top: 62px;
+  left: 18px;
+  right: 18px;
+  text-align: center;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.choose-heading h1 { margin: 0; font: 700 24px/43px RefSans, sans-serif; letter-spacing: 0; }
+.choose-heading h1 b { color: #20c66e; font: 700 31px/1 FlightHand, cursive; }
+.choose-heading p { margin-top: 5px; color: #2ac471; font: 400 23px/32px FlightHand, cursive; letter-spacing: 0; }
+.choose-heading::after {
+  content: "";
+  position: absolute;
+  top: 136px;
+  left: 65%;
+  width: 26px;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 60'%3E%3Cpath d='M18 3C34 25 29 39 10 54m1-18-3 19 19-3' fill='none' stroke='%232ac471' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.choose.is-scrolled .choose-heading { opacity: .08; }
+.choose .choices {
+  position: absolute;
+  inset: 0 0 171px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 249px 0 79px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  z-index: 2;
+  mask-image: linear-gradient(transparent, #000 22px, #000 calc(100% - 54px), transparent);
+}
+.choose .choices::-webkit-scrollbar { display: none; }
+.choose .choice {
+  position: relative;
+  flex: 0 0 66px;
+  width: 100%;
+  height: 66px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  filter: none;
+  transform: none;
+  perspective: 600px;
+  overflow: visible;
+}
+.choose .choice:hover,
+.choose .choice[aria-pressed="true"] { transform: none; }
+.choice .choice-prefix {
+  position: absolute;
+  top: 16px;
+  left: 54px;
+  color: #c8cbc9;
+  font: 700 23px/30px RefSans, sans-serif;
+  letter-spacing: -.4px;
+  pointer-events: none;
+}
+.choose .choice-sheet,
+.choose .choice-aircraft {
+  position: absolute;
+  inset: 0 auto auto 166px;
+  width: 170px;
+  height: 66px;
+  filter: none;
+  pointer-events: none;
+  transition: opacity .14s ease;
+}
+/* The artwork remains connected throughout the existing SVG fold animation. */
+.choose .choice-sheet svg,
+.choose .choice-aircraft svg {
+  position: absolute;
+  top: -42px;
+  left: 0;
+  display: block;
+  width: 170px;
+  height: 151px;
+  max-width: none;
+  overflow: visible;
+  opacity: 1;
+  filter: none;
+  transform: scaleY(.44);
+  transform-origin: 50% 50%;
+}
+.choose .choice:not([aria-pressed="true"]) .choice-sheet { filter: saturate(.06); opacity: .45; }
+.choose .choice[aria-pressed="true"] .choice-prefix { color: #090c0a; }
+.choose .choice .choice-label,
+.choose .choice[aria-pressed="true"] .choice-label {
+  position: absolute;
+  left: 181px;
+  top: 17px;
+  width: 142px;
+  color: #999e9b;
+  font: 700 20px/29px RefSans, sans-serif;
+  text-align: left;
+  letter-spacing: 0;
+  text-shadow: none;
+  transform: none;
+  pointer-events: none;
+  transition: color .2s;
+  z-index: 3;
+}
+.choose .choice .choice-label > span,
+.choose .choice[aria-pressed="true"] .choice-label > span { display: inline; }
+.choose .choice[aria-pressed="true"] .choice-label { color: #07110c; }
+.choose .choice .choice-check { display: none; }
+.choose .choices.at-limit .choice[aria-pressed="false"] { opacity: 1; }
+.choose .choose-bottom {
+  position: absolute;
+  left: 61px;
+  right: 61px;
+  bottom: 0;
+  width: auto;
+  height: 172px;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  background: #fff;
+  z-index: 5;
+}
+.choose-bottom > p:has(#selected-count) { display: none; }
+.choose-bottom #release { height: 56px; font-size: 17px; }
+.choose-bottom .reward-note,
+.choose-bottom .confirmation-note {
+  position: absolute;
+  left: -25px;
+  width: 330px;
+  margin: 0;
+  color: #aaa;
+  font: 400 14px/22px RefSans, sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.choose-bottom .reward-note { top: 85px; }
+.choose-bottom .confirmation-note { top: 112px; font-size: 13px; }
+
+/* Approved 714 × 1228 artwork is never stretched or cropped to an older card. */
+.phone .keepsakes {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+}
+.keepsakes-heading,
+.keepsakes .card-tabs,
+.keepsakes .keepsake-nav { display: none; }
+.keepsakes .keepsake-carousel {
+  position: absolute;
+  top: 25px;
+  left: 0;
+  width: 100%;
+  height: 568px;
+  touch-action: pan-y;
+  overflow: visible;
+}
+.keepsakes .keepsake-preview,
+.keepsakes .keepsake-neighbor {
+  display: block;
+  position: relative;
+  width: 330px;
+  max-width: none;
+  height: auto;
+  aspect-ratio: 714 / 1228;
+  padding: 0;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 15px;
+  background: transparent;
+  filter: none;
+  box-shadow: 0 3px 9px #006f4610;
+}
+.keepsakes .keepsake-preview > img,
+.keepsakes .keepsake-neighbor > img,
+.keepsakes .keepsake-preview > svg,
+.keepsakes .keepsake-neighbor > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 714 / 1228;
+  object-fit: contain;
+  border-radius: 0;
+}
+.keepsakes .keepsake-neighbor {
+  position: absolute;
+  top: 36px;
+  margin: 0;
+  pointer-events: none;
+  box-shadow: none;
+}
+.keepsake-neighbor.left { right: calc(100% - 19px); }
+.keepsake-neighbor.right { left: calc(100% - 19px); }
+.keepsakes .card-dots {
+  position: absolute;
+  top: 637px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+.card-dots button,
+.card-dots i,
+.card-dots span {
+  display: block;
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  border: 0;
+  background: #d6d6d6;
+}
+.card-dots .active,
+.card-dots [aria-current="true"],
+.card-dots [aria-selected="true"] { background: #00bd79; }
+.keepsakes .keepsakes-footer {
+  position: absolute;
+  top: 664px;
+  left: 61px;
+  width: 280px;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+.keepsakes-footer #save-card { width: 100%; height: 52px; font-size: 18px; }
+.keepsakes-footer #save-card span { display: none; }
+.keepsakes-footer p,
+.keepsakes-footer .text {
+  display: block;
+  padding: 0;
+  margin: 13px 0 0;
+  color: #aaa;
+  font: 400 13px/22px RefSans, sans-serif;
+}
+.keepsakes-footer #save-route { display: none; }
+
+/* Small screens use the same composition, scaled by the app's preview fit. */
+@media (max-width: 459px) {
+  body { padding: 0; background: #fff; }
+  .phone,
+  .phone[data-view="result"],
+  .phone[data-view="cards"] { border-radius: 0; }
+}

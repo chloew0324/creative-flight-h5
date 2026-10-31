@@ -1,0 +1,41 @@
+/* Integrate the approved artwork without changing the measured 2024 controls. */
+.intro{display:block;background:#fff;text-align:center}
+#intro-heart{position:absolute;width:139px;height:124px;top:210px;left:132px}
+.intro h1{position:absolute;top:349px;left:0;right:0;font:700 23px/33px RefSans,sans-serif}
+.intro>p{position:absolute;top:389px;left:0;right:0;font:400 11px/18px RefSans,sans-serif;color:#ccc}
+.intro-count{position:absolute;top:598px;left:0;right:0;display:flex;align-items:center;flex-direction:column;gap:12px}
+.intro-count b{font:700 30px/38px RefSans,sans-serif;color:#22cc73}
+.intro-count span{font:700 17px/26px RefSans,sans-serif}
+.phone .cover {display:block;padding:0;background:#fff;overflow:hidden}
+.welcome-person{position:absolute;top:185px;width:100%;text-align:center}
+#welcome-avatar{width:81px;height:81px;margin:auto;padding:3px;border-radius:16px;background:linear-gradient(125deg,#23ce68,#bcff62);overflow:hidden}
+#welcome-avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:12px}
+#welcome-name{margin:15px 0 0;font:500 18px/25px RefSans,sans-serif}
+.welcome-copy{position:absolute;top:358px;left:12px;right:12px;text-align:center}
+.welcome-copy h1,.welcome-copy p{margin:0 0 13px;font:700 17px/24px RefSans,sans-serif}
+.welcome-copy b{color:#22ca73}
+.cover #start{position:absolute;top:535px;left:150px;width:102px;display:flex;align-items:center;flex-direction:column;background:none;border:0;padding:8px;color:#b9c2bc;font:500 16px/24px RefSans,sans-serif;letter-spacing:0;animation:none}
+.cover #start span{font-size:29px;line-height:34px}
+.welcome-launch{position:absolute;bottom:-57px;left:62px;width:300px;height:173px;display:flex;gap:4px;transform:rotate(-8deg);color:#00bd67;font:900 58px/80px RefSans,sans-serif}
+.welcome-launch span{width:86px;height:200px;background:#b0ff91;transform:rotate(-8deg)}
+.welcome-launch span:nth-child(2){transform:translateY(-10px) rotate(5deg)}
+.welcome-launch span:nth-child(3){transform:translateY(30px) rotate(14deg)}
+.vote #ad-image,.vote .ad-clone .ad-image>div{width:100%;height:auto}
+.vote #ad-image>svg,.vote .ad-clone .ad-image>div>svg{display:block;width:100%;height:auto;max-width:none}
+.phone .result{display:block;position:relative;padding:0;background:#fafffc;overflow:hidden}
+.phone .result .route-card{position:absolute;inset:0;width:100%;height:100%;max-width:none;margin:0;border-radius:0;box-shadow:none;overflow:hidden;aspect-ratio:auto;background:none}
+.phone .result .route-card>svg{display:block;width:100%;height:100%;max-width:none;object-fit:contain}
+.phone .result .result-bottom{position:absolute;inset:606px auto auto 57px;width:288px;height:82px;min-height:0;padding:0;margin:0;display:block;z-index:3;background:none}
+.phone .result #save{position:relative;top:auto;left:auto;right:auto;bottom:auto;width:100%;height:56px;font-size:17px;box-shadow:0 6px 18px #00c97617}
+.phone .result #again{display:block;position:relative;inset:auto;width:max-content;margin:7px auto 0;padding:0;color:#66a48b;font:400 11px/18px RefSans,sans-serif}
+.phone .keepsakes .keepsakes-footer p{margin-top:9px}
+.phone .keepsakes .cards-more{font-size:12px;margin-top:2px}
+.phone .keepsake-carousel{touch-action:none}
+.phone .wechat{flex-shrink:0}
+[hidden]{display:none!important}
+
+/* The vote caption occupies the gap below the vote count heading. */
+.phone .flight .flight-copy{top:132px;left:16px;right:16px;z-index:2;opacity:1;transform:none;animation:none!important;pointer-events:none}
+.phone .flight .flight-copy span{display:block;color:#548572;font:500 14px/20px RefSans,sans-serif;letter-spacing:1.2px;text-shadow:0 1px 8px #fff}
+.phone .flight .flight-copy small{display:none}
+.phone .vote #voted>b,.phone .vote .ad-clone .voted-state>b{position:absolute;top:40px;left:0;right:0;margin:0;color:var(--ink);font:500 14px/20px RefSans,sans-serif}

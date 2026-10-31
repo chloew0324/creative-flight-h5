@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff"><meta name="description" content="创意启航 · 朋友圈广告年度评选 · 腾讯十周年交互原型">
+  <title>创意启航 · 朋友圈广告年度评选</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Cpath fill='%2300d77b' d='M5 28 75 10 38 69 31 42Z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=2024-motion-13">
+  <link rel="stylesheet" href="reference-2024.css?v=2024-motion-13">
+  <link rel="stylesheet" href="ending-2024.css?v=2024-motion-13">
+  <link rel="stylesheet" href="integration.css?v=2024-motion-13">
+  <link rel="stylesheet" href="home-theme.css?v=2024-motion-13">
+  <link rel="stylesheet" href="choices-refined.css?v=2024-motion-13">
+</head>
+<body>
+<div id="app" class="phone" data-view="cover">
+  <header class="wechat"><button id="back" aria-label="关闭活动">×</button><span>朋友圈广告年度评选</span><button id="menu" aria-label="更多选项">•••</button></header>
+  <main>
+    <section id="intro" class="page intro" hidden aria-label="朋友圈广告年度评选开场"><div id="intro-heart"></div><h1>朋友圈广告年度评选</h1><p>MOST LIKED WECHAT MOMENT ADS 2024</p><div class="intro-count"><b>1,045,726</b><span>用户也在参与</span></div></section>
+    <section id="cover" class="page cover"><div class="entry-stage" data-phase="intro"><section class="intro-copy"><h1>朋友圈广告年度评选</h1><p>MOST LIKED WECHAT MOMENT ADS 2024</p><div class="intro-count"><b>1,045,726</b><span>用户也在参与</span></div></section>
+<section class="home" aria-label="创意启航首页"><p class="topic">腾讯十周年 · 创意启航</p><div class="personal"><div id="welcome-avatar"></div><p id="welcome-name">Aragakey.</p></div><div class="welcome-copy"><p>去年你投出了 <b>2</b> 个年度 TOP10</p><p>目光如炬的你，总能发现好创意</p><p>好创意的标准等你定义</p></div><svg class="home-lines" viewBox="0 0 402 827" aria-hidden="true"><path d="M-48 333C22 310 2 242 48 189M453 577C389 669 326 638 350 544"/><path class="plus" d="M335 205h8m-4-4v8M53 592h8m-4-4v8"/></svg><div class="peripheral coral" aria-hidden="true"></div><div class="peripheral lilac" aria-hidden="true"></div><div class="entry"><div class="swipe"><svg viewBox="0 0 28 32"><path d="M14 28V4M5 14 14 4l9 10"/></svg><span>上滑</span></div><button id="start" aria-label="开始投票">开始投票</button><svg class="underline" viewBox="0 0 402 827" aria-hidden="true"><path d="M25 803C106 775 229 756 199 772C178 784 292 788 308 715"/></svg></div></section>
+<svg class="rail-svg" viewBox="0 0 402 827" aria-hidden="true"><path id="flight-rail" d="M201 324C289 276 384 367 362 510C340 653 257 723 315 678"/></svg>
+<div id="shared-paper" data-paper-id="intro-to-home" aria-label="折纸爱心"><svg viewBox="0 0 180 160" aria-hidden="true"><defs><linearGradient id="paper-light" x1=".1" y1="0" x2=".85" y2="1"><stop stop-color="#edfff5"/><stop offset=".6" stop-color="#a2edc7"/><stop offset="1" stop-color="#6ee2ab"/></linearGradient><linearGradient id="paper-near" x1=".15" y1="0" x2=".95" y2="1"><stop stop-color="#baf8d9"/><stop offset=".44" stop-color="#26d58c"/><stop offset="1" stop-color="#00a96b"/></linearGradient><linearGradient id="paper-keel" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#007c53"/><stop offset="1" stop-color="#00c477"/></linearGradient></defs><path class="keel" fill="url(#paper-keel)"/><g class="faces"></g><path class="edge" fill="none" stroke="white" stroke-opacity=".6" stroke-width=".7" stroke-linejoin="round"/><path class="crease" fill="none" stroke="white" stroke-opacity=".65" stroke-width=".8"/><text class="top-word" x="90" y="83" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="34" font-weight="800">TOP</text></svg></div>
+</div></section>
+    <section id="vote" class="page vote" hidden>
+      <div class="vote-heading"><h1 id="ad-title"></h1><p>╲ 当前 <b id="ad-votes"></b> 票 ╱</p></div>
+      <div id="carousel" class="carousel" aria-label="左右滑动切换广告作品">
+        <article id="ad-card" class="ad-card"><div class="ad-image"><div id="ad-image" role="img"></div></div><div class="card-air"></div><div class="heart-area"><button id="vote-button" class="heart-button" aria-label="为当前广告投票"><span id="vote-heart"></span><span class="heart-copy"><b>投票</b><small id="ad-brand"></small></span></button><div id="voted" hidden><span class="voted-icon"></span><b>已投票</b></div></div></article>
+      </div>
+      <div class="vote-bottom"><p>已投 <b id="vote-count">0</b> / 10 票</p><button id="next" class="text" disabled>下一步</button></div>
+    </section>
+    <section id="choose" class="page choose" hidden>
+      <header class="choose-heading"><h1>你选出了 <b id="chosen-ad-count">0</b> 个好创意<br>它们为什么打动你？</h1><p>点亮你的创意标准吧</p><div class="selection-status">轻触纸签，可自由多选</div></header>
+      <div id="choices" class="choices" aria-label="自由选择认可的创意标准，可多选"></div>
+      <div class="choose-bottom"><p>已选 <b id="selected-count">0</b> 项</p><button id="release" class="primary" disabled>确定我的标准</button><p class="reward-note">🧧 有机会获得现金红包或红包封面</p><p class="confirmation-note">*确定后不能修改投票</p></div>
+    </section>
+    <section id="result" class="page result" hidden><div id="route-card" class="route-card" role="img" aria-label="我的十周年创意航线"></div><div class="result-bottom"><button id="save" class="primary">挑选我的创意卡片</button><button id="again" class="text">重看飞行 ↗</button></div></section>
+    <section id="cards" class="page keepsakes" hidden aria-label="我的创意卡片">
+      <div class="keepsake-carousel" aria-label="左右滑动挑选创意卡片"><div class="keepsake-neighbor left" aria-hidden="true"></div><div id="keepsake-preview" class="keepsake-preview" role="img" aria-label="创意卡片预览"></div><div class="keepsake-neighbor right" aria-hidden="true"></div></div>
+      <nav id="card-dots" class="card-dots" aria-label="选择创意卡片"></nav>
+      <footer class="keepsakes-footer"><button id="save-card" class="primary">保存这张创意卡片</button><p>左右滑动，挑选你的创意</p><button id="gift-next" class="text cards-more">上滑查看评委礼物 ↑</button></footer>
+    </section>
+  </main>
+  <div id="flight" class="flight" hidden aria-hidden="true"><canvas id="flight-canvas"></canvas><div id="fold-heart" class="fold-heart"></div><div id="flying-plane" class="flying-plane"></div><div id="flight-copy" class="flight-copy"><span>喜欢，已启航。</span><small>让好创意飞得更远</small></div></div>
+  <dialog id="menu-dialog"><header><h2>创意启航</h2><button class="close" aria-label="关闭">×</button></header><button id="menu-home" class="menu-item">回到首页 <span>↗</span></button><button id="menu-route" class="menu-item">我的创意航线 <span>↗</span></button><button id="menu-cards" class="menu-item">我的创意卡片 <span>↗</span></button><button data-action="rules" class="menu-item">玩法说明 <span>↗</span></button><button id="reset" class="menu-item">重新开始 <span>↻</span></button></dialog>
+  <dialog id="rules-dialog"><header><h2>让喜欢，成为风。</h2><button class="close" aria-label="关闭">×</button></header><ol><li><b>为喜欢的作品投票</b><p>左右滑动看作品，轻触折纸爱心。每支作品可投一票。</p></li><li><b>选出你的创意标准</b><p>轻触纸签，把偏爱折成纸飞机。六项标准可自由多选，确定后不能修改。</p></li><li><b>留下十周年的创意航线</b><p>飞机沿灰色航线飞行，随后挑选并保存个人创意卡片。上滑查看评委礼物。</p></li></ol><p class="prototype-note">本地交互原型。六支广告及票数取自你提供的2024案例录屏，不向真实活动提交投票。头像与昵称沿用录屏示例。</p></dialog>
+  <dialog id="reset-dialog"><header><h2>重新启航？</h2><button class="close" aria-label="关闭">×</button></header><p>将清空本原型保存在当前浏览器的投票和航线。</p><button id="confirm-reset" class="primary">重新开始</button></dialog>
+  <div id="toast" role="status" aria-live="polite"></div><div id="announcement" class="sr-only" aria-live="polite"></div>
+</div>
+<script src="assets/b-visuals.js?v=2024-motion-13"></script>
+<script src="ads-2024.js?v=2024-motion-13"></script>
+<script src="cards-artwork.js?v=2024-motion-13"></script>
+<script src="ending-2024.js?v=2024-motion-13"></script>
+<script src="entry-motion.js?v=2024-motion-13"></script>
+<script src="app.js?v=2024-motion-13"></script>
+</body></html>

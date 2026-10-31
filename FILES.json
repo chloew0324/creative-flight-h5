@@ -1,0 +1,157 @@
+[
+  {
+    "path": "ads-2024.js",
+    "bytes": 1511,
+    "sha256": "2d352fbf2edbfca2d145951388ca96f6867b6ecbb287ddc11fd24ce083b5ad8d"
+  },
+  {
+    "path": "app.js",
+    "bytes": 44706,
+    "sha256": "3ed26ba85d435d62ccd5b5f20fa22b0b2c0a46b76acfd8575a244095ae304687"
+  },
+  {
+    "path": "assets/ads-2024/01-anta-frame.jpg",
+    "bytes": 310014,
+    "sha256": "8326588be8adce320923eab7af6e7a5084fda2cbf6670704e2a821e335c9e3b4"
+  },
+  {
+    "path": "assets/ads-2024/02-porsche-frame.jpg",
+    "bytes": 355181,
+    "sha256": "52420754d4ae61b4239233995a15f66a8867af13f3bac96b90004109c2445cc1"
+  },
+  {
+    "path": "assets/ads-2024/03-vivo-frame.jpg",
+    "bytes": 275551,
+    "sha256": "ce3051dfdf0f19b8bd64d123096a43b2e1afeccaf8f31037c46556c0fad53960"
+  },
+  {
+    "path": "assets/ads-2024/04-gucci-frame.jpg",
+    "bytes": 334556,
+    "sha256": "cea56c8ebdb84ca372ab7260d2714d421bd9af4904ead871f74ebbda4f4e345b"
+  },
+  {
+    "path": "assets/ads-2024/05-kiehls-frame.jpg",
+    "bytes": 314452,
+    "sha256": "82cad769ccdc5b449800db52fcf357580ed76ced4fa5ccfacf6547a4b9b9f85d"
+  },
+  {
+    "path": "assets/ads-2024/06-huawei-frame.jpg",
+    "bytes": 295231,
+    "sha256": "556e04ad2293c4a56f4e7da56f190912b844b0470f780da42ad66c96a49540b2"
+  },
+  {
+    "path": "assets/b-visuals.js",
+    "bytes": 3890947,
+    "sha256": "2477ee4532b9cd0a7808c419bbd96cf36a04cdfb446967bd4e5d2807f4ffe731"
+  },
+  {
+    "path": "assets/cards/copy-fun.png",
+    "bytes": 1419060,
+    "sha256": "bdf8c3c49316e76eb62d95b6e7232b862102962694bf6d9706f37db63ad5fa2d"
+  },
+  {
+    "path": "assets/cards/detail-care.png",
+    "bytes": 1420823,
+    "sha256": "9ecb09d08e8713cd8837446295586873eb49df1af2f79c3c3738d4cae8574449"
+  },
+  {
+    "path": "assets/cards/interaction-play.png",
+    "bytes": 1462898,
+    "sha256": "fcb89293653e1b6be7d842cb6813b2f3c4577b44f9a4b142071031f25d4dd72d"
+  },
+  {
+    "path": "assets/cards/point-fresh.png",
+    "bytes": 1548582,
+    "sha256": "297d9c32616aff3a7f287694fa42a0aee7c2048b2cab07364f7d056e1f05961c"
+  },
+  {
+    "path": "assets/cards/story-moving.png",
+    "bytes": 1397793,
+    "sha256": "cdc8aa8e01180abacdb46d60742fa6beb9b296fbdf4d0d985566a26ed4c15330"
+  },
+  {
+    "path": "assets/cards/visual-beauty.png",
+    "bytes": 1446258,
+    "sha256": "274c94d594d33fa7178c4a4df6c2fbd685262a718428af7a15dad5e6bd8122f6"
+  },
+  {
+    "path": "assets/choice-paper-sheet.png",
+    "bytes": 1657575,
+    "sha256": "bcd701c398c665f6f9a4edb765f2c3ab0a320af8bd64d906d8fcefc930e900ca"
+  },
+  {
+    "path": "assets/identity/aragakey-avatar.svg",
+    "bytes": 277867,
+    "sha256": "a598b551e7487ef5b10ae96ca26732d178c284461c86c55893345a0297a5d913"
+  },
+  {
+    "path": "assets/reference-hand-bold.woff",
+    "bytes": 160864,
+    "sha256": "5ed3a37d997b5df4c3e51358fe5f02fddaff60872c55ac068175f0cfdb720cd0"
+  },
+  {
+    "path": "assets/reference-hand.woff",
+    "bytes": 162744,
+    "sha256": "17b80d55f1d307252e9a3904ac2f28c6de9f5693e2faa715dadf25581f27e5fc"
+  },
+  {
+    "path": "assets/reference-sans-bold.woff",
+    "bytes": 77600,
+    "sha256": "55c6d4f7287be7393baf7cc668265d455082db03ff989f8e8c1aba53832e831e"
+  },
+  {
+    "path": "assets/reference-sans.woff",
+    "bytes": 79740,
+    "sha256": "3793369c558ba95df60589f4273c860d238098e4cea1c0cfbd35dc36393c7702"
+  },
+  {
+    "path": "cards-artwork.js",
+    "bytes": 11152,
+    "sha256": "65d941369899fcd2ca50408ff9b00c40b850c0e0b514679de460109c6d9b9a26"
+  },
+  {
+    "path": "choices-refined.css",
+    "bytes": 7251,
+    "sha256": "eb4d8a4d88ac87faf65ac90b976ea1ad6200398cc3d985b9a0d97a5a563fba66"
+  },
+  {
+    "path": "ending-2024.css",
+    "bytes": 7793,
+    "sha256": "64976909b9ad5522862ecc0a1c21a3c3c9535189c665ebe6322221de55904ecf"
+  },
+  {
+    "path": "ending-2024.js",
+    "bytes": 10280,
+    "sha256": "239efd5a721c060de7518ac44e66b6bd55ce46b7d119ea912374170def826459"
+  },
+  {
+    "path": "entry-motion.js",
+    "bytes": 7469,
+    "sha256": "1761f0faf5108c29a89e5e8d3e81fc9f3cb71bc0769cb52a40f3b39d774575c2"
+  },
+  {
+    "path": "home-theme.css",
+    "bytes": 6067,
+    "sha256": "1f667d327f374f3dac641578feec4a613e8321156dd7f6adaa272b81cdff320e"
+  },
+  {
+    "path": "index.html",
+    "bytes": 9047,
+    "sha256": "f9dc325e944f0d248d88f0fa1dee142c3ca49f4b67c364d67ce2aa97be328352"
+  },
+  {
+    "path": "integration.css",
+    "bytes": 3870,
+    "sha256": "22e23619e217d8f959528ced74e010fe97b8f926039dd289f685c0bc82044b4b"
+  },
+  {
+    "path": "reference-2024.css",
+    "bytes": 11522,
+    "sha256": "8dbd1c5a137baa2a7967bb5bf3ac7bfe8e5eb0c1d8687e28cb9bba564946efd6"
+  },
+  {
+    "path": "styles.css",
+    "bytes": 38336,
+    "sha256": "6a69ea1a044d571506e958164baac923f258070593e3df37ccd94fb76ed4fd63"
+  }
+]

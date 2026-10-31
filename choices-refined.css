@@ -1,0 +1,231 @@
+@font-face{font-family:FlightHandBold;src:url('assets/reference-hand-bold.woff') format('woff');font-weight:600 900;font-display:swap}
+/* Approved C typography, with six independent paper objects on a 402 × 827 page. */
+.phone #choose {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+}
+.phone #choose .choose-heading {
+  position: absolute;
+  top: 61px;
+  left: 18px;
+  right: 18px;
+  opacity: 1;
+  z-index: 1;
+  height: 122px;
+}
+.phone #choose .choose-heading h1 {
+  margin: 0;
+  color: #111d17;
+  font: 600 24px/36px "Hiragino Sans GB", RefSans, "PingFang SC", sans-serif;
+  letter-spacing: 0;
+}
+.phone #choose .choose-heading h1 b {
+  display: inline;
+  padding: 0 2px;
+  color: #10ba74;
+  font: 400 28px/1 FlightHand, cursive;
+}
+.phone #choose .choose-heading > p {
+  position: absolute;
+  top: 94px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  color: #15b779;
+  font: 400 20px/28px FlightHand, cursive;
+  letter-spacing: 0;
+}
+.phone #choose .choose-heading .selection-status { display: none; }
+.phone #choose .choose-heading::after {
+  display: block;
+  content: "";
+  position: absolute;
+  top: 120px;
+  left: calc(50% + 107px);
+  width: 19px;
+  height: 23px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 30'%3E%3Cpath d='M6 2c13 7 12 15 1 24m-1-8L5 27l8-3' fill='none' stroke='%2331bf84' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.phone #choose .choices {
+  position: absolute;
+  top: 202px;
+  right: auto;
+  bottom: auto;
+  left: 37px;
+  display: grid;
+  grid-template-columns: 150px 150px;
+  grid-auto-rows: 108px;
+  gap: 16px 28px;
+  width: 328px;
+  max-width: none;
+  height: 356px;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  mask-image: none;
+  scrollbar-width: none;
+  z-index: 2;
+}
+.phone #choose .choice,
+.phone #choose .choice:hover,
+.phone #choose .choice[aria-pressed="true"] {
+  --paper-angle: 0deg;
+  position: relative;
+  flex: none;
+  width: 150px;
+  height: 108px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  filter: none;
+  transform: none;
+  overflow: visible;
+  isolation: isolate;
+  text-align: center;
+  perspective: 650px;
+}
+.phone #choose .choice::before,
+.phone #choose .choice::after,
+.phone #choose .choice-index,
+.phone #choose .choice-check,
+.phone #choose .choice-prefix { display: none; }
+.phone #choose .choice .choice-label,
+.phone #choose .choice[aria-pressed="true"] .choice-label {
+  position: absolute;
+  top: 87px;
+  left: 0;
+  right: 0;
+  width: 150px;
+  margin: 0;
+  color: #626862;
+  font: 700 20px/26px FlightHandBold, "HanziPen SC", cursive;
+  letter-spacing: 0;
+  text-align: center;
+  text-shadow: none;
+  white-space: nowrap;
+  transform: none;
+  z-index: 3;
+  pointer-events: none;
+  transition: color .2s;
+}
+.phone #choose .choice[aria-pressed="true"] .choice-label { color: #293c32; }
+.phone #choose .choice .choice-label > span { display: inline; }
+.phone #choose .choice-sheet {
+  position: absolute;
+  inset: -14px auto auto 18px;
+  display: block;
+  width: 114px;
+  height: 101.333333px;
+  opacity: 1;
+  filter: grayscale(1) drop-shadow(0 4px 4px #46604d15);
+  transform: none;
+  pointer-events: none;
+  transition: opacity .14s ease, filter .2s ease;
+}
+.phone #choose .choice-aircraft {
+  position: absolute;
+  inset: -15px auto auto 12px;
+  display: block;
+  width: 126px;
+  height: 112px;
+  opacity: 0;
+  filter: drop-shadow(0 5px 4px #38634b1c);
+  transform: none;
+  pointer-events: none;
+  transition: opacity .14s ease;
+}
+/* Reset the old flattened rule on both the outer SVG and its nested image viewport. */
+.phone #choose .choice-sheet > svg,
+.phone #choose .choice-aircraft > svg {
+  position: static;
+  inset: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  overflow: visible;
+  opacity: 1;
+  filter: none;
+  transform: none;
+  transform-origin: 50% 50%;
+}
+.phone #choose .choice-aircraft > svg > svg {
+  position: static;
+  inset: auto;
+  display: initial;
+  width: 162px;
+  height: 113px;
+  max-width: none;
+  overflow: visible;
+  opacity: 1;
+  filter: none;
+  transform: none;
+  transform-origin: 0 0;
+}
+.phone #choose .choice[aria-pressed="true"] .choice-sheet { opacity: 0; }
+.phone #choose .choice[aria-pressed="true"] .choice-aircraft { opacity: 1; }
+.phone #choose .choice.is-folding .choice-sheet {
+  opacity: 1;
+  filter: drop-shadow(0 4px 4px #38634b1c);
+}
+.phone #choose .choice.is-folding .choice-aircraft { opacity: 0; }
+.phone #choose .choice.is-folding.show-plane .choice-sheet { opacity: 0; }
+.phone #choose .choice.is-folding.show-plane .choice-aircraft { opacity: 1; }
+.phone #choose .choices.at-limit .choice { opacity: 1; }
+.phone #choose .choice:focus-visible {
+  outline: 2px solid #00b77a;
+  outline-offset: 5px;
+  border-radius: 5px;
+}
+.phone #choose .choose-bottom {
+  position: absolute;
+  top: 603px;
+  bottom: auto;
+  left: 61px;
+  right: auto;
+  width: 280px;
+  height: 172px;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  z-index: 5;
+}
+.phone #choose .choose-bottom > p:has(#selected-count) { display: none; }
+.phone #choose #release { height: 56px; font: 600 17px/56px RefSans, sans-serif; }
+.phone #choose .choose-bottom .reward-note,
+.phone #choose .choose-bottom .confirmation-note {
+  position: absolute;
+  left: -25px;
+  width: 330px;
+  margin: 0;
+  color: #a4aaa5;
+  font: 400 13px/22px RefSans, sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.phone #choose .choose-bottom .reward-note { top: 83px; }
+.phone #choose .choose-bottom .confirmation-note { top: 110px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .phone #choose .choice,
+  .phone #choose .choice-sheet,
+  .phone #choose .choice-aircraft,
+  .phone #choose .choice-label { transition: none; animation: none; }
+}
+
+/* Use the approved paper material at rest; the connected mesh remains visible during folding. */
+:root{--choice-paper-art:url('assets/choice-paper-sheet.png')}
+.phone #choose .choice-paper-photo,.phone #choose .choice-plane-photo{position:absolute;left:12px;top:0;width:126px;height:83px;background-image:var(--choice-paper-art);background-repeat:no-repeat;pointer-events:none;transition:opacity .09s;z-index:2}
+.phone #choose .choice-paper-photo{background-size:calc(1433px * var(--paper-scale)) calc(1098px * var(--paper-scale));background-position:calc(var(--paper-x) * var(--paper-scale) * -1px) calc(var(--paper-y) * var(--paper-scale) * -1px);filter:grayscale(1);opacity:1}
+.phone #choose .choice-plane-photo{left:0;background-size:calc(1433px * var(--air-scale)) calc(1098px * var(--air-scale));background-position:calc(var(--air-x) * var(--air-scale) * -1px) calc(var(--air-y) * var(--air-scale) * -1px);filter:hue-rotate(var(--air-hue))}
+.phone #choose .choice-sheet{opacity:0}
+.phone #choose .choice-aircraft{top:0;filter:none}
+.phone #choose .choice-aircraft>svg{opacity:0}
+.phone #choose .choice[aria-pressed=true] .choice-paper-photo,.phone #choose .choice.is-folding .choice-paper-photo{opacity:0}
+.phone #choose .choice.is-folding .choice-sheet{opacity:1}
+.phone #choose .choice.is-folding.show-plane .choice-sheet{opacity:0}
+
+.phone #choose .choice-paper-photo,.phone #choose .choice-plane-photo{height:75px}
