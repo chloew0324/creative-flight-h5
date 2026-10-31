@@ -8,6 +8,23 @@ const PALETTES=[
  {id:'lime',main:'#bfd28c',light:'#ebf3ce',dark:'#9caf6b',ink:'#7f9259',soft:'#f8fbee'}
 ];
 const ADS=globalThis.FLIGHT_ADS_2024||(typeof require==='function'?require('./ads-2024.js'):[]);
+// Recording ad feedback is yellow / purple / yellow / pink / yellow / green.
+// Keep it independent of the six creative-standard colours.
+const VOTE_PALETTES=[
+ {id:'apricot',main:'#ffb83e',light:'#ffe4a4',dark:'#f29d30',ink:'#cd922b',soft:'#fffde9',feedbackTop:'#fdf7c3',feedbackBottom:'#fbfde5'},
+ {id:'lilac',main:'#9869ee',light:'#dfd0ff',dark:'#7943d5',ink:'#7851b4',soft:'#f4efff',feedbackTop:'#dddefd',feedbackBottom:'#e3ecfb'},
+ {id:'rose',main:'#ed9bb9',light:'#ffe0ed',dark:'#d7739c',ink:'#b95a82',soft:'#fff1f6',feedbackTop:'#ffe0ef',feedbackBottom:'#fff0f5'},
+ {id:'mint',main:'#17ce69',light:'#b4f99b',dark:'#00ae57',ink:'#17994d',soft:'#efffe8',feedbackTop:'#ccfecd',feedbackBottom:'#e6fee4'}
+];
+const votePalette=index=>VOTE_PALETTES[[0,1,0,2,0,3][index]];
+function adEntryFrames(x,step){return [
+ {transform:`translate3d(${x}px,150px,0) rotateY(-7deg) scale(.58)`,offset:0},
+ {transform:`translate3d(${x-step*.7}px,65px,0) rotateY(-4deg) scale(.8)`,offset:.28},
+ {transform:`translate3d(${x-3*step}px,0,0) rotateY(0deg) scale(1)`,offset:1}
+]}
+function previewScale(width,height,insets={top:0,right:0,bottom:0,left:0}){
+ return Math.max(.01,Math.min(1,(width-insets.left-insets.right)/402,(height-insets.top-insets.bottom-(width>=460?32:0))/827));
+}
 const STANDARDS=['点子新鲜','故事动人','画面好看','文案有梗','互动好玩','细节用心'];
 const CARD_COPY=[
  {line:'把日常，折成意想不到。',quote:'让好奇，带你飞向新鲜。'},
@@ -45,7 +62,7 @@ function voteFlightPath(index,w,h,x,y){
  const i=((index%6)+6)%6,origin={x,y:y-51};
  return {index:i,origin,control1:{x:x+w*[.22,.13,.27,.18,.09,.24][i],y:origin.y-[45,85,36,68,60,52][i]},control2:{x:w*[.98,.98,.91,.96,.98,.94][i],y:h*[.40,.34,.46,.37,.41,.31][i]},destination:{x:w*1.17,y:h*[.07,.10,.04,.13,.05,.09][i]},duration:[2100,2250,2050,2300,2200,2150][i],bank:[10,13,9,11,14,12][i],pattern:i%3};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,previewScale};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -58,6 +75,10 @@ if(typeof document!=='undefined'){
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  function saveState(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch{}}
  function theme(p){app.style.setProperty('--accent',p.main);app.style.setProperty('--soft',p.soft);app.style.setProperty('--dark',p.dark);app.style.setProperty('--ink',p.ink)}
+ function voteFeedback(active,p){
+  app.classList.toggle('vote-feedback',active);document.body.classList.toggle('vote-feedback',active);
+  for(const target of [app,document.body]){target.style.setProperty('--feedback-top',p.feedbackTop||'#fff');target.style.setProperty('--feedback-bottom',p.feedbackBottom||'#fff')}
+ }
  function heart(p){
   const id='h'+uid++;
   return `<svg class="heart-svg origami-heart" viewBox="0 0 180 160" aria-hidden="true"><defs><linearGradient id="${id}paper" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="${p.light}"/><stop offset=".45" stop-color="${p.main}"/><stop offset="1" stop-color="${p.main}"/></linearGradient><linearGradient id="${id}shade" x1="0" y1="0" x2="1" y2=".7"><stop stop-color="${p.main}"/><stop offset="1" stop-color="${p.dark}"/></linearGradient></defs><g transform="translate(10 0)"><path d="M80 30 62 12H34L13 33V61L80 137 147 61V33L126 12H98Z" fill="url(#${id}paper)"/><path d="M80 30 98 12H126L147 33V61L80 137Z" fill="url(#${id}shade)" opacity=".7"/><path d="M34 12H62L80 30 48 43 13 33Z" fill="${p.light}" opacity=".56"/><path d="M98 12H126L147 33 112 43 80 30Z" fill="${p.light}" opacity=".29"/><path d="M13 61 80 93V137Z" fill="${p.dark}" opacity=".23"/><path d="M147 61 80 93V137Z" fill="${p.light}" opacity=".18"/><path d="M13 33 48 43 80 30M80 30 112 43 147 33" fill="none" stroke="white" stroke-opacity=".42" stroke-width=".65"/><path d="M13 61 80 93 147 61" fill="none" stroke="${p.dark}" stroke-opacity=".15" stroke-width=".65"/><path d="M80 30V136" fill="none" stroke="${p.dark}" stroke-opacity=".26" stroke-width="1.3"/><path d="M79.35 31V135" fill="none" stroke="white" stroke-opacity=".75" stroke-width=".65"/><path d="M34 12H62L80 30 98 12H126L147 33" fill="none" stroke="white" stroke-opacity=".6" stroke-width=".6"/></g></svg>`;
@@ -84,7 +105,7 @@ if(typeof document!=='undefined'){
   if(['result','cards','gift'].includes(next)&&!state.locked)next='choose';
   choiceFrames.forEach(id=>cancelAnimationFrame(id));choiceFrames.clear();
   cancelAnimationFrame(journeyFrame);clearTimeout(journeyTimer);clearTimeout(transitionTimer);stopFlight();app.classList.remove('poster-flying');closeDialogs();view=next;app.dataset.view=next;
-  $$('.page').forEach(el=>el.hidden=el.id!==next);$('#vote').classList.remove('entering');$('#back').textContent='×';theme(PALETTES[0]);
+  $$('.page').forEach(el=>el.hidden=el.id!==next);$('#vote').classList.remove('entering');$('#back').textContent='×';theme(PALETTES[0]);voteFeedback(false,PALETTES[0]);
   if(next==='cover')entryController?.showHome();else entryController?.cancel();
   if(next==='vote'){renderVote();if(entry&&!reduced())enterAds()}
   if(next==='choose')renderChoices();if(next==='result'){renderResult();if(fly)flyPoster()}if(next==='cards')renderCards();
@@ -95,31 +116,35 @@ if(typeof document!=='undefined'){
  }
  function adArtwork(ad){const {x,y,w,h}=ad.crop;return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" role="img" aria-label="${ad.title}，录屏原广告内容"><image href="${asset(ad.image)}" width="${ad.frameWidth}" height="${ad.frameHeight}"/></svg>`}
  function renderVote(){
-  const ad=ADS[state.index],p=PALETTES[state.index],voted=state.votes.includes(ad.id);theme(p);
+  const ad=ADS[state.index],p=votePalette(state.index),voted=state.votes.includes(ad.id);theme(p);voteFeedback(voted,p);
   $('#ad-title').textContent=ad.title;$('#ad-votes').textContent=(ad.votes+Number(voted)).toLocaleString('en-US');$('#ad-brand').textContent=ad.brand;$('#ad-image').innerHTML=adArtwork(ad);$('#ad-image').setAttribute('aria-label',ad.title);$('#vote-count').textContent=state.votes.length;
+  $('#ad-history').textContent=ad.id==='porsche'?'你去年为保时捷投过票':ad.id==='gucci'?'你去年为GUCCI投过票':'';
   $('#vote-heart').innerHTML=heart(p);$('#vote-button').hidden=voted;$('#vote-button').disabled=busy;$('#voted').hidden=!voted;$('.voted-icon').innerHTML=heart(p);$('#next').disabled=!state.votes.length||busy;
+  $('#next').textContent=state.votes.length?'下一步':'快去投票';
   if(!busy)syncNeighbors();
  }
  function slideStep(){return $('#ad-card').offsetWidth+20}
  function makeSlide(index){
-  const ad=ADS[index],p=PALETTES[index],clone=$('#ad-card').cloneNode(true),voted=state.votes.includes(ad.id);
+  const ad=ADS[index],p=votePalette(index),clone=$('#ad-card').cloneNode(true),voted=state.votes.includes(ad.id);
   clone.querySelector('#ad-image').innerHTML=adArtwork(ad);clone.querySelector('#vote-heart').innerHTML=heart(p);clone.querySelector('#ad-brand').textContent=ad.brand;clone.querySelector('#vote-button').hidden=voted;clone.querySelector('#voted').hidden=!voted;clone.querySelector('#voted').classList.add('voted-state');clone.querySelector('.voted-icon').innerHTML=heart(p);
   for(const node of [clone,...clone.querySelectorAll('[id]')])node.removeAttribute('id');clone.className='ad-card ad-clone';clone.style.transform='';clone.setAttribute('aria-hidden','true');clone.inert=true;clone.style.setProperty('--accent',p.main);clone.style.setProperty('--dark',p.dark);return clone;
  }
  function syncNeighbors(){
-  $$('.ad-clone').forEach(el=>el.remove());const step=slideStep();for(const direction of [-1,1]){const index=state.index+direction;if(index<0||index>=ADS.length)continue;const slide=makeSlide(index);slide.dataset.direction=direction;slide.style.transform=`translateX(${direction*step}px) rotateY(${-direction*4}deg) scale(.98)`;$('#carousel').append(slide)}
+  $$('.ad-clone').forEach(el=>el.remove());if(state.votes.includes(ADS[state.index].id))return;
+  const step=slideStep();for(const direction of [-1,1]){const index=state.index+direction;if(index<0||index>=ADS.length)continue;const slide=makeSlide(index);slide.dataset.direction=direction;slide.style.transform=`translateX(${direction*step}px) rotateY(${-direction*4}deg) scale(.98)`;$('#carousel').append(slide)}
  }
  function enterAds(){
   busy=true;renderVote();$('#vote').classList.add('entering');$$('.ad-clone').forEach(el=>el.remove());const step=slideStep(),cards=[];
-  for(let i=0;i<3;i++){const el=makeSlide((state.index+i+1)%ADS.length);$('#carousel').append(el);cards.push({el,x:(i+1)*step})}cards.push({el:$('#ad-card'),x:4*step});
-  const animations=cards.map(({el,x})=>el.animate([{transform:`translate3d(${x}px,150px,0) rotateY(-7deg)`,offset:0},{transform:`translate3d(${x-step*.55}px,0,0) rotateY(-4deg)`,offset:.23},{transform:`translate3d(${x-4*step}px,0,0) rotateY(0deg)`,offset:1}],{duration:2250,easing:'cubic-bezier(.18,.65,.17,1)',fill:'forwards'}));
-  transitionTimer=setTimeout(()=>{animations.forEach(a=>a.cancel());busy=false;$('#vote').classList.remove('entering');renderVote()},2300);
+  voteFeedback(false,votePalette(state.index));
+  for(let i=0;i<3;i++){const el=makeSlide((state.index+i+1)%ADS.length);$('#carousel').append(el);cards.push({el,x:i*step})}cards.push({el:$('#ad-card'),x:3*step});
+  const animations=cards.map(({el,x})=>el.animate(adEntryFrames(x,step),{duration:2600,easing:'cubic-bezier(.2,.55,.14,1)',fill:'forwards'}));
+  transitionTimer=setTimeout(()=>{animations.forEach(a=>a.cancel());busy=false;$('#vote').classList.remove('entering');renderVote()},2650);
  }
  function paintDrag(dx){const step=slideStep();$('#ad-card').style.transform=`translateX(${dx}px) rotateY(${-dx/step*4}deg)`;$$('.ad-clone').forEach(el=>el.style.transform=`translateX(${Number(el.dataset.direction)*step+dx}px) rotateY(${-Number(el.dataset.direction)*4}deg) scale(.98)`)}
  function moveAd(direction){
   if(busy||view!=='vote')return;const next=state.index+direction;if(next<0||next>=ADS.length)return;
   if(reduced()){state.index=next;saveState();renderVote();return}
-  const card=$('#ad-card'),step=slideStep(),offset=pointer?.dx||0,outgoing=makeSlide(state.index);busy=true;pointer=null;$$('.ad-clone').forEach(el=>el.remove());$('#carousel').append(outgoing);state.index=next;saveState();renderVote();card.style.transform='';
+  const card=$('#ad-card'),step=slideStep(),offset=pointer?.dx||0,outgoing=makeSlide(state.index);outgoing.classList.add('ad-outgoing');busy=true;pointer=null;$$('.ad-clone').forEach(el=>el.remove());$('#carousel').append(outgoing);state.index=next;saveState();renderVote();card.style.transform='';
   const duration=Math.max(240,450-Math.abs(offset)*.4),options={duration,easing:'cubic-bezier(.2,.75,.2,1)',fill:'forwards'};
   const out=outgoing.animate([{transform:`translateX(${offset}px)`},{transform:`translateX(${-direction*step}px) rotateY(${direction*4}deg) scale(.98)`}],options);
   const incoming=card.animate([{transform:`translateX(${direction*step+offset}px) rotateY(${-direction*4}deg) scale(.98)`},{transform:'translateX(0) rotateY(0deg) scale(1)'}],options);
@@ -129,13 +154,13 @@ if(typeof document!=='undefined'){
  function launchFlight(){
   if(busy||view!=='vote')return;
   if(reduced()){renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票。');toast('喜欢，已启航。');return}
-  busy=true;const p=PALETTES[state.index],overlay=$('#flight'),fold=$('#fold-heart'),flyer=$('#flying-plane'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d'),button=$('#vote-button');
+  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),flyer=$('#flying-plane'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d'),button=$('#vote-button');
   const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,heartRect=(button.hidden?$('.voted-icon'):button).getBoundingClientRect(),coordinateScale=w/bounds.width,heartWidth=heartRect.width*coordinateScale||164,heartHeight=heartRect.height*coordinateScale||146,x0=heartRect.width?(heartRect.x-bounds.x)*coordinateScale+heartWidth/2:(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=heartRect.height?(heartRect.y-bounds.y)*coordinateScale-top+heartHeight/2:(launch.y-bounds.y+launch.height/2)*coordinateScale-top-9;
   const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   fold.style.width=heartWidth+'px';fold.style.height=heartHeight+'px';fold.style.left=x0-heartWidth/2+'px';fold.style.top=y0-heartHeight/2+'px';fold.style.opacity='1';fold.style.transform='none';
   fold.innerHTML=`<svg class="folding-paper" viewBox="0 0 180 160" aria-hidden="true"><g>${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".24" stroke-width=".55" stroke-linejoin="round"/>').join('')}</g><path class="paper-outline" fill="none" stroke="white" stroke-opacity=".68" stroke-width=".7" stroke-linejoin="round"/><path class="paper-crease" fill="none" stroke="${p.ink}" stroke-opacity=".22" stroke-width=".7"/></svg>`;
   const faces=[...fold.querySelectorAll('polygon')],outline=fold.querySelector('.paper-outline'),crease=fold.querySelector('.paper-crease');
-  flyer.style.width=heartWidth+'px';flyer.style.height=heartHeight+'px';flyer.innerHTML=plane(p);flyer.style.opacity='0';$('#flight-copy').style.top='132px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
+  flyer.style.width=heartWidth+'px';flyer.style.height=heartHeight+'px';flyer.innerHTML=plane(p);flyer.style.opacity='0';$('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
   overlay.hidden=false;overlay.classList.remove('flight-running');void overlay.offsetWidth;overlay.classList.add('flight-running');$('#vote').classList.add('flying');renderVote();
   const profile=voteFlightPath(state.index,w,h,x0,y0),{origin,control1,control2,destination}=profile;overlay.dataset.flightVariant=String(profile.index);canvas.dataset.effect=['paper-petals','prism-glints','wind-orbits'][profile.pattern];
   const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration;let lastSpark=0;
@@ -329,7 +354,7 @@ if(typeof document!=='undefined'){
  $('#cover').addEventListener('wheel',event=>{if(event.deltaY>30&&view==='cover'&&!busy)beginVoting()},{passive:true});
  $('#cards').addEventListener('wheel',event=>{if(event.deltaY>40&&view==='cards')show('gift')},{passive:true});
  window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);cancelAnimationFrame(journeyFrame)});
- function fitPreview(){const height=window.visualViewport?.height||window.innerHeight,available=window.innerWidth>=460?height-32:height;app.style.setProperty('--preview-scale',String(Math.min(1,window.innerWidth/402,available/827)))}
+ function fitPreview(){const height=window.visualViewport?.height||window.innerHeight,style=getComputedStyle(document.documentElement),insets=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,parseFloat(style.getPropertyValue('--safe-'+side))||0]));app.style.setProperty('--preview-scale',String(previewScale(window.innerWidth,height,insets)))}
  window.addEventListener('resize',fitPreview);window.visualViewport?.addEventListener('resize',fitPreview);fitPreview();
  const entryURL=new URL(location.href);
  if(entryURL.searchParams.has('view')){entryURL.searchParams.delete('view');history.replaceState(null,'',entryURL)}

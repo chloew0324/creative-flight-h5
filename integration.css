@@ -29,18 +29,18 @@
 .phone .result #save{position:relative;top:auto;left:auto;right:auto;bottom:auto;width:100%;height:56px;font-size:17px;box-shadow:0 6px 18px #00c97617}
 .phone .result #again{display:block;position:relative;inset:auto;width:max-content;margin:7px auto 0;padding:0;color:#66a48b;font:400 11px/18px RefSans,sans-serif}
 .phone .keepsakes .keepsakes-footer p{margin-top:9px}
-.phone .keepsakes .cards-more{font-size:12px;margin-top:2px}
+.phone .keepsakes .cards-more{font-size:14px;margin-top:2px}
 .phone .keepsake-carousel{touch-action:none}
 .phone .wechat{flex-shrink:0}
 [hidden]{display:none!important}
 
-/* The vote caption occupies the gap below the vote count heading. */
-.phone .flight .flight-copy{top:132px;left:16px;right:16px;z-index:2;opacity:1;transform:none;animation:none!important;pointer-events:none}
-.phone .flight .flight-copy span{display:block;color:#548572;font:500 14px/20px RefSans,sans-serif;letter-spacing:1.2px;text-shadow:0 1px 8px #fff}
+/* Feedback replaces the heading in its own zone, above the enlarged card. */
+.phone .flight .flight-copy{top:85px;left:16px;right:16px;z-index:2;opacity:1;transform:none;animation:none!important;pointer-events:none}
+.phone .flight .flight-copy span{display:block;color:var(--ink);font:700 28px/38px RefSans,sans-serif;letter-spacing:1px;text-shadow:none}
 .phone .flight .flight-copy small{display:none}
 .phone .vote #voted>b,.phone .vote .ad-clone .voted-state>b{position:absolute;top:40px;left:0;right:0;margin:0;color:var(--ink);font:500 14px/20px RefSans,sans-serif}
 
 /* These screens consume swipes; leave the gift page's native scrolling intact. */
 .phone #cover,.phone #cards{touch-action:none;-webkit-user-select:none;user-select:none}
 .phone #cover img,.phone #cards img{-webkit-user-drag:none}
-@media(max-width:459px){body{padding:0}.phone{border-radius:0}}
+@media(max-width:459px){body{padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)}.phone{border-radius:0}}

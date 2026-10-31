@@ -1,8 +1,8 @@
 /*
  * 2024 recording coordinates: 883 × 1920 → 402 × 874, minus 47 px
  * of the system status bar. The remaining app is 402 × 827; nav is 52 px.
- * User-approved differences: folded paper / aircraft, six standards, flat cards,
- * a green save button. Load this file after styles.css.
+ * User-approved differences: folded paper / aircraft, six standards, flat cards.
+ * Read 录屏设计规范.md before changing common layout. Load after styles.css.
  */
 :root {
   font-family: RefSans, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
@@ -12,9 +12,13 @@
   --reference-height: 827px;
   --reference-nav: 52px;
   --reference-main: 775px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
 }
 
-body { padding: 16px 0; }
+body { padding:16px 0;min-height:100svh;min-height:100dvh; }
 .phone,
 .phone[data-view="result"],
 .phone[data-view="cards"] {
@@ -86,6 +90,7 @@ body { padding: 16px 0; }
   font: 700 22px/31px RefSans, sans-serif;
   letter-spacing: 0;
 }
+.vote-heading #ad-history { position:absolute;top:-32px;left:0;right:0;color:#aaa;font:400 14px/22px RefSans,sans-serif; }
 .vote-heading p {
   margin-top: 8px;
   color: var(--accent);
@@ -122,12 +127,12 @@ body { padding: 16px 0; }
 .vote .ad-clone { position: absolute; left: 50.5px; top: 0; margin: 0; }
 .vote .ad-image {
   flex: none;
-  height: 329px;
-  padding: 15px 15px 0;
+  height: 375px;
+  padding: 0;
   overflow: hidden;
 }
 .vote .ad-image img { display: block; width: 100%; height: auto; max-width: none; }
-.vote .ad-image::after { height: 22px; background: linear-gradient(transparent, #fff); }
+.vote .ad-image::after { display:none; }
 .vote .card-air { display: none; }
 .vote .heart-area {
   position: absolute;
@@ -153,7 +158,7 @@ body { padding: 16px 0; }
 .vote .heart-copy b { font: 700 21px/25px RefSans, sans-serif; letter-spacing: 1px; }
 .vote .heart-copy small { max-width: 96px; font: 500 10px/14px RefSans, sans-serif; }
 .vote #voted .voted-icon,
-.vote .ad-clone .voted-state .voted-icon { width: 100%; height: 100%; opacity: .24; }
+.vote .ad-clone .voted-state .voted-icon { width: 100%; height: 100%; opacity: .24;transform:none; }
 .vote #voted > b,
 .vote .ad-clone .voted-state > b { top: 38px; margin: 0; font: 500 14px/20px RefSans, sans-serif; }
 .vote #replay,
@@ -172,6 +177,19 @@ body { padding: 16px 0; }
 .vote #next { display: block; margin: 2px auto 0; padding: 0; color: #a4a5a0; font: 400 14px/23px RefSans, sans-serif; }
 .vote #next:disabled { color: #aaada8; }
 .vote #next span { display: none; }
+
+/* One feedback state owns the whole canvas, including navigation and gutters. */
+body.vote-feedback { background:linear-gradient(var(--feedback-top),var(--feedback-bottom)); }
+.phone.vote-feedback { background:linear-gradient(var(--feedback-top),var(--feedback-bottom)); }
+.phone.vote-feedback .wechat,.phone.vote-feedback .vote { background:transparent; }
+.phone.vote-feedback .ad-clone:not(.ad-outgoing) { visibility:hidden; }
+.vote .ad-card { transition:translate .4s ease,scale .4s ease; }
+.vote.flying #ad-card { transform-origin:50% 0;translate:0 -14px;scale:1.035; }
+.vote.flying .vote-heading { opacity:0;transition:opacity .25s; }
+.phone.vote-feedback .vote-bottom b { color:var(--accent); }
+.vote.entering .ad-card { transform-origin:50% 0; }
+.vote.entering .vote-heading,.vote.entering .heart-area,.vote.entering .vote-bottom { animation:appear .35s 2.25s both; }
+@media(prefers-reduced-motion:reduce){.vote .ad-card{transition:none}}
 
 /* Selection: a single scrolling sentence column, fixed confirmation below. */
 .phone .choose { display: block; padding: 0; overflow: hidden; background: #fff; }
@@ -401,14 +419,14 @@ body { padding: 16px 0; }
 .card-dots [aria-selected="true"] { background: #00bd79; }
 .keepsakes .keepsakes-footer {
   position: absolute;
-  top: 664px;
-  left: 61px;
-  width: 280px;
+  top: 686px;
+  left: 31px;
+  width: 340px;
   margin: 0;
   padding: 0;
   text-align: center;
 }
-.keepsakes-footer #save-card { width: 100%; height: 52px; font-size: 18px; }
+.keepsakes-footer #save-card { width:100%;height:26px;padding:0;color:#080b09;background:none;font:700 18px/26px RefSans,sans-serif; }
 .keepsakes-footer #save-card span { display: none; }
 .keepsakes-footer p,
 .keepsakes-footer .text {
@@ -419,6 +437,7 @@ body { padding: 16px 0; }
   font: 400 13px/22px RefSans, sans-serif;
 }
 .keepsakes-footer #save-route { display: none; }
+.phone .keepsakes .cards-more { margin-top:2px;font:400 14px/22px RefSans,sans-serif; }
 
 /* Small screens use the same composition, scaled by the app's preview fit. */
 @media (max-width: 459px) {
