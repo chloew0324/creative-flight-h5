@@ -17,11 +17,22 @@ const VOTE_PALETTES=[
  {id:'mint',main:'#17ce69',light:'#b4f99b',dark:'#00ae57',ink:'#17994d',soft:'#efffe8',feedbackTop:'#ccfecd',feedbackBottom:'#e6fee4'}
 ];
 const votePalette=index=>VOTE_PALETTES[[0,1,0,2,0,3][index]];
-function adEntryFrames(x,step){return [
- {transform:`translate3d(${x}px,150px,0) rotateY(-7deg) scale(.58)`,offset:0},
- {transform:`translate3d(${x-step*.7}px,65px,0) rotateY(-4deg) scale(.8)`,offset:.28},
- {transform:`translate3d(${x-3*step}px,0,0) rotateY(0deg) scale(1)`,offset:1}
-]}
+const wrapAdIndex=index=>(index%ADS.length+ADS.length)%ADS.length;
+// Top-centres travel on one large circle; each card follows its tangent.
+// At the adjacent slots this yields the recording's visible ±6° in-plane tilt.
+function adOrbitPose(position,step,arrival=1){
+ const radius=3000,angle=Math.asin(step/radius)*position,growth=.58+.42*arrival;
+ const x=radius*Math.sin(angle)*growth,y=radius*(1-Math.cos(angle))*growth+150*(1-arrival),rotation=angle*180/Math.PI,yaw=-rotation*.6,scale=growth*(1-.02*Math.min(6,Math.abs(position)));
+ const n=value=>Number(value.toFixed(4));
+ return {x,y,rotation,yaw,scale,transform:`translate3d(${n(x)}px,${n(y)}px,0) rotateZ(${n(rotation)}deg) rotateY(${n(yaw)}deg) scale(${n(scale)})`};
+}
+function adEntryFrames(x,step){return Array.from({length:65},(_,i)=>{
+ const t=i/64,arrival=1-(1-Math.min(1,t/.7))**3;
+ return {transform:adOrbitPose(x/step-3*t,step,arrival).transform,opacity:Math.min(1,t/.12),offset:t};
+})}
+function adSlideFrames(from,to,step){return Array.from({length:25},(_,i)=>{
+ const t=i/24;return {transform:adOrbitPose(from+(to-from)*t,step).transform,offset:t};
+})}
 function previewScale(width,height,insets={top:0,right:0,bottom:0,left:0}){
  return Math.max(.01,Math.min(1,(width-insets.left-insets.right)/402,(height-insets.top-insets.bottom-(width>=460?32:0))/827));
 }
@@ -62,7 +73,7 @@ function voteFlightPath(index,w,h,x,y){
  const i=((index%6)+6)%6,origin={x,y:y-51};
  return {index:i,origin,control1:{x:x+w*[.22,.13,.27,.18,.09,.24][i],y:origin.y-[45,85,36,68,60,52][i]},control2:{x:w*[.98,.98,.91,.96,.98,.94][i],y:h*[.40,.34,.46,.37,.41,.31][i]},destination:{x:w*1.17,y:h*[.07,.10,.04,.13,.05,.09][i]},duration:[2100,2250,2050,2300,2200,2150][i],bank:[10,13,9,11,14,12][i],pattern:i%3};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,previewScale};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -121,7 +132,7 @@ if(typeof document!=='undefined'){
   $('#ad-history').textContent=ad.id==='porsche'?'你去年为保时捷投过票':ad.id==='gucci'?'你去年为GUCCI投过票':'';
   $('#vote-heart').innerHTML=heart(p);$('#vote-button').hidden=voted;$('#vote-button').disabled=busy;$('#voted').hidden=!voted;$('.voted-icon').innerHTML=heart(p);$('#next').disabled=!state.votes.length||busy;
   $('#next').textContent=state.votes.length?'下一步':'快去投票';
-  if(!busy)syncNeighbors();
+  if(!busy){$('#ad-card').style.transform=adOrbitPose(0,slideStep()).transform;syncNeighbors()}
  }
  function slideStep(){return $('#ad-card').offsetWidth+20}
  function makeSlide(index){
@@ -131,24 +142,25 @@ if(typeof document!=='undefined'){
  }
  function syncNeighbors(){
   $$('.ad-clone').forEach(el=>el.remove());if(state.votes.includes(ADS[state.index].id))return;
-  const step=slideStep();for(const direction of [-1,1]){const index=state.index+direction;if(index<0||index>=ADS.length)continue;const slide=makeSlide(index);slide.dataset.direction=direction;slide.style.transform=`translateX(${direction*step}px) rotateY(${-direction*4}deg) scale(.98)`;$('#carousel').append(slide)}
+  const step=slideStep();for(const direction of [-1,1]){const slide=makeSlide(wrapAdIndex(state.index+direction));slide.dataset.direction=direction;slide.style.transform=adOrbitPose(direction,step).transform;$('#carousel').append(slide)}
  }
  function enterAds(){
   busy=true;renderVote();$('#vote').classList.add('entering');$$('.ad-clone').forEach(el=>el.remove());const step=slideStep(),cards=[];
   voteFeedback(false,votePalette(state.index));
-  for(let i=0;i<3;i++){const el=makeSlide((state.index+i+1)%ADS.length);$('#carousel').append(el);cards.push({el,x:i*step})}cards.push({el:$('#ad-card'),x:3*step});
+  for(let i=0;i<5;i++){const el=i===3?$('#ad-card'):makeSlide(wrapAdIndex(state.index+i-3));if(i!==3)$('#carousel').append(el);cards.push({el,x:i*step})}
   const animations=cards.map(({el,x})=>el.animate(adEntryFrames(x,step),{duration:2600,easing:'cubic-bezier(.2,.55,.14,1)',fill:'forwards'}));
   transitionTimer=setTimeout(()=>{animations.forEach(a=>a.cancel());busy=false;$('#vote').classList.remove('entering');renderVote()},2650);
  }
- function paintDrag(dx){const step=slideStep();$('#ad-card').style.transform=`translateX(${dx}px) rotateY(${-dx/step*4}deg)`;$$('.ad-clone').forEach(el=>el.style.transform=`translateX(${Number(el.dataset.direction)*step+dx}px) rotateY(${-Number(el.dataset.direction)*4}deg) scale(.98)`)}
+ function paintDrag(dx){const step=slideStep(),shift=dx/step;$('#ad-card').style.transform=adOrbitPose(shift,step).transform;$$('.ad-clone').forEach(el=>el.style.transform=adOrbitPose(Number(el.dataset.direction)+shift,step).transform)}
  function moveAd(direction){
-  if(busy||view!=='vote')return;const next=state.index+direction;if(next<0||next>=ADS.length)return;
+  if(busy||view!=='vote')return;const previous=state.index,next=wrapAdIndex(previous+direction);
   if(reduced()){state.index=next;saveState();renderVote();return}
   const card=$('#ad-card'),step=slideStep(),offset=pointer?.dx||0,outgoing=makeSlide(state.index);outgoing.classList.add('ad-outgoing');busy=true;pointer=null;$$('.ad-clone').forEach(el=>el.remove());$('#carousel').append(outgoing);state.index=next;saveState();renderVote();card.style.transform='';
   const duration=Math.max(240,450-Math.abs(offset)*.4),options={duration,easing:'cubic-bezier(.2,.75,.2,1)',fill:'forwards'};
-  const out=outgoing.animate([{transform:`translateX(${offset}px)`},{transform:`translateX(${-direction*step}px) rotateY(${direction*4}deg) scale(.98)`}],options);
-  const incoming=card.animate([{transform:`translateX(${direction*step+offset}px) rotateY(${-direction*4}deg) scale(.98)`},{transform:'translateX(0) rotateY(0deg) scale(1)'}],options);
-  $('.vote-heading').animate([{opacity:.12},{opacity:1}],{duration:350});incoming.finished.then(()=>{incoming.cancel();out.cancel();busy=false;renderVote()});
+  const shift=offset/step,out=outgoing.animate(adSlideFrames(shift,-direction,step),options);
+  const incoming=card.animate(adSlideFrames(direction+shift,0,step),options);
+  const companions=[-direction,2*direction].map(position=>{const el=makeSlide(wrapAdIndex(previous+position));$('#carousel').append(el);return el.animate(adSlideFrames(position+shift,position-direction,step),options)});
+  $('.vote-heading').animate([{opacity:.12},{opacity:1}],{duration:350});incoming.finished.then(()=>{incoming.cancel();out.cancel();companions.forEach(a=>a.cancel());busy=false;renderVote()});
  }
  function vote(){if(busy||state.locked||state.votes.includes(ADS[state.index].id))return;state=castVote(state);saveState();launchFlight()}
  function launchFlight(){
@@ -341,12 +353,12 @@ if(typeof document!=='undefined'){
  $$('[data-action="rules"]').forEach(button=>button.addEventListener('click',()=>{closeDialogs();$('#rules-dialog').showModal()}));$$('dialog .close').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));$$('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close()}}));
  let longPress=0;
  app.addEventListener('pointerdown',event=>{if(busy||event.isPrimary===false||event.target.closest('dialog')||(event.target.closest('button')&&!(view==='cover'&&event.target.closest('#start'))))return;pointer={x:event.clientX,y:event.clientY,id:event.pointerId,dx:0,dragging:false};if(view==='cards'&&event.target.closest('#keepsake-preview'))longPress=setTimeout(()=>{pointer=null;downloadArtwork('card',$('#save-card'))},650)});
- app.addEventListener('pointermove',event=>{if(!pointer||pointer.id!==event.pointerId)return;const ratio=app.clientWidth/app.getBoundingClientRect().width;let dx=(event.clientX-pointer.x)*ratio,dy=(event.clientY-pointer.y)*ratio;if(Math.hypot(dx,dy)>8){clearTimeout(longPress);if(view==='cover'||view==='cards'){app.setPointerCapture(event.pointerId);if(event.cancelable)event.preventDefault()}}if(view!=='vote')return;if(!pointer.dragging){if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){pointer=null;return}if(Math.abs(dx)<8||Math.abs(dx)<Math.abs(dy))return;pointer.dragging=true;app.setPointerCapture(event.pointerId)}if((dx>0&&state.index===0)||(dx<0&&state.index===ADS.length-1))dx*=.2;pointer.dx=dx;paintDrag(dx)});
+ app.addEventListener('pointermove',event=>{if(!pointer||pointer.id!==event.pointerId)return;const ratio=app.clientWidth/app.getBoundingClientRect().width;let dx=(event.clientX-pointer.x)*ratio,dy=(event.clientY-pointer.y)*ratio;if(Math.hypot(dx,dy)>8){clearTimeout(longPress);if(view==='cover'||view==='cards'){app.setPointerCapture(event.pointerId);if(event.cancelable)event.preventDefault()}}if(view!=='vote')return;if(!pointer.dragging){if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){pointer=null;return}if(Math.abs(dx)<8||Math.abs(dx)<Math.abs(dy))return;pointer.dragging=true;app.setPointerCapture(event.pointerId)}pointer.dx=dx;paintDrag(dx)});
  function releasePointer(event,cancelled=false){
   clearTimeout(longPress);if(!pointer||pointer.id!==event.pointerId)return;const drag=pointer,ratio=app.clientWidth/app.getBoundingClientRect().width,dx=(event.clientX-drag.x)*ratio,dy=(event.clientY-drag.y)*ratio;pointer=null;if(app.hasPointerCapture(event.pointerId))app.releasePointerCapture(event.pointerId);
   if(!cancelled&&view==='cover'&&dy< -35&&Math.abs(dy)>Math.abs(dx)){event.preventDefault();beginVoting();return}
   if(!cancelled&&view==='cards'){if(Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy))moveCard(dx<0?1:-1);else if(dy< -40)show('gift');return}
-  if(view!=='vote')return;const direction=drag.dx<0?1:-1;if(drag.dragging&&!cancelled&&Math.abs(drag.dx)>45&&state.index+direction>=0&&state.index+direction<ADS.length){pointer=drag;moveAd(direction);return}
+  if(view!=='vote')return;const direction=drag.dx<0?1:-1;if(drag.dragging&&!cancelled&&Math.abs(drag.dx)>45){pointer=drag;moveAd(direction);return}
   if(drag.dragging){const elements=[$('#ad-card'),...$$('.ad-clone')],before=elements.map(el=>el.style.transform);paintDrag(0);elements.forEach((el,i)=>el.animate([{transform:before[i]},{transform:el.style.transform}],{duration:230,easing:'ease-out'}))}
  }
  app.addEventListener('pointerup',event=>releasePointer(event));app.addEventListener('pointercancel',event=>releasePointer(event,true));

@@ -6,8 +6,8 @@
   },
   {
     "path": "app.js",
-    "bytes": 47125,
-    "sha256": "2aea7fc3b9fa1527cedb63cb3d35db7506df880283252534b1775ce972b6f59a"
+    "bytes": 47872,
+    "sha256": "156f8f935ae8c1bcd0c8c27ee34503bbdb24e7ffeca510a7fbe46286561e9a6a"
   },
   {
     "path": "assets/ads-2024/01-anta-frame.jpg",
@@ -136,8 +136,8 @@
   },
   {
     "path": "index.html",
-    "bytes": 9070,
-    "sha256": "da84ee1d6ad117060eb2249fbc9e44a2c7e0c67532a496a85ecb8d8b83de21e0"
+    "bytes": 9022,
+    "sha256": "2c40cd8b16ae1e5c37abc5e96652678b0bb06ff24a27b55822e352fdc0373439"
   },
   {
     "path": "integration.css",
@@ -146,8 +146,8 @@
   },
   {
     "path": "reference-2024.css",
-    "bytes": 12942,
-    "sha256": "934fa0b9705e5b16cf8ce426428dfe3d334287eb8659d2a93e089de35146dfca"
+    "bytes": 12940,
+    "sha256": "b5365801a970a884710bd01061f954b688e14470646b6314e54778dc0c61a09c"
   },
   {
     "path": "styles.css",
