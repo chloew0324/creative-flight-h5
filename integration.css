@@ -39,3 +39,8 @@
 .phone .flight .flight-copy span{display:block;color:#548572;font:500 14px/20px RefSans,sans-serif;letter-spacing:1.2px;text-shadow:0 1px 8px #fff}
 .phone .flight .flight-copy small{display:none}
 .phone .vote #voted>b,.phone .vote .ad-clone .voted-state>b{position:absolute;top:40px;left:0;right:0;margin:0;color:var(--ink);font:500 14px/20px RefSans,sans-serif}
+
+/* These screens consume swipes; leave the gift page's native scrolling intact. */
+.phone #cover,.phone #cards{touch-action:none;-webkit-user-select:none;user-select:none}
+.phone #cover img,.phone #cards img{-webkit-user-drag:none}
+@media(max-width:459px){body{padding:0}.phone{border-radius:0}}
