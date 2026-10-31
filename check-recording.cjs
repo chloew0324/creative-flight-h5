@@ -24,7 +24,7 @@ for(const [width,height] of [[390,844],[375,667],[320,568],[1440,900],[844,390]]
 }
 // Exercise the actual shared rendering/state functions across all six works.
 const source=fs.readFileSync('app.js','utf8'),nodes=new Map(),clones=[];
-function node(){const classes=new Set(),properties={};return {classes,properties,style:{setProperty:(key,value)=>properties[key]=value},classList:{toggle:(key,on)=>on?classes.add(key):classes.delete(key)},setAttribute(){},append(el){clones.push(el)},remove(){clones.splice(clones.indexOf(this),1)}}}
+function node(){const classes=new Set(),properties={};return {classes,properties,dataset:{},style:{setProperty:(key,value)=>properties[key]=value},classList:{contains:key=>classes.has(key),toggle:(key,on)=>on?classes.add(key):classes.delete(key)},setAttribute(){},append(el){clones.push(el)},remove(){clones.splice(clones.indexOf(this),1)}}}
 const app=node(),body=node();
 const context={app,document:{body},state:{index:0,votes:[]},view:'vote',busy:false,ADS,votePalette,adOrbitPose,wrapAdIndex,theme:()=>{},heart:p=>p.id,adArtwork:ad=>ad.id,slideStep:()=>321,makeSlide:()=>({...node(),dataset:{}}),$:selector=>{if(!nodes.has(selector))nodes.set(selector,node());return nodes.get(selector)},$$:()=>[...clones]};
 vm.createContext(context);
@@ -37,7 +37,12 @@ for(let i=0;i<6;i++){
  assert.equal(clones[0].style.transform,adOrbitPose(-1,321).transform);
  assert.equal(clones[1].style.transform,adOrbitPose(1,321).transform);
  context.state.votes=[ADS[i].id];context.renderVote();
- assert.equal(clones.length,0,'Both side advertisements leave after voting');
+ assert.equal(clones.length,2,'Neighbours must be restored after the vote effect without requiring a swipe');
+ assert.equal(app.dataset.votePhase,'voted');
+ context.setAdBrowsing(true);assert.equal(app.dataset.votePhase,'browsing');assert.equal(clones.length,2);
+ context.setAdBrowsing(false);assert.equal(app.dataset.votePhase,'voted');
+ nodes.get('#vote').classes.add('flying');context.syncVotePhase();assert.equal(app.dataset.votePhase,'voting');
+ nodes.get('#vote').classes.delete('flying');context.syncVotePhase();assert.equal(app.dataset.votePhase,'voted');
  assert.ok(app.classes.has('vote-feedback')&&body.classes.has('vote-feedback'));
  assert.equal(app.properties['--feedback-top'],votePalette(i).feedbackTop);
  assert.equal(nodes.get('#next').textContent,'下一步');assert.equal(nodes.get('#next').disabled,false);
@@ -47,7 +52,11 @@ for(let i=0;i<6;i++){
 context.state={index:1,votes:['anta']};context.renderVote();
 assert.equal(app.classes.has('vote-feedback'),false);assert.equal(clones.length,2,'Switching to another work restores normal neighbouring cards');
 assert.equal(nodes.get('#ad-history').textContent,'你去年为保时捷投过票');
+context.view='choose';context.voteFeedback(false,votePalette(0));assert.equal(body.classes.has('vote-view'),false);assert.equal(app.dataset.votePhase,'off');
 const css=fs.readFileSync('reference-2024.css','utf8');
 assert.match(css,/\.vote \.ad-image\s*\{[^}]*height: 375px;[^}]*padding: 0;/);
-assert.match(css,/\.phone\.vote-feedback \.wechat,\.phone\.vote-feedback \.vote \{ background:transparent; \}/);
-console.log('PASS: shared circular entrance/drag/settle geometry; tangent-aligned ±6° side cards; no entrance-end pose jump; wrap within six real ads; feedback states and mobile viewport fit.');
+assert.match(css,/\.phone\[data-vote-phase="voting"\] \.ad-clone \{ opacity:0;visibility:hidden; \}/);
+assert.match(css,/\.phone\.vote-feedback #vote\.browsing \.ad-clone \{ opacity:1;visibility:visible; \}/);
+assert.match(css,/#eee 39%/);assert.match(css,/radial-gradient\(ellipse 105% 48% at 110% 43%/);
+assert.match(css,/\.vote\.flying \.ad-image \{ opacity:1;transition:none; \}/);
+console.log('PASS: circular geometry; hide neighbours only during voting, restore at effect completion without a swipe; drag/settle phases; sampled gray middle and directional feedback glow; mobile fit.');

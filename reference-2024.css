@@ -73,7 +73,7 @@ body { padding:16px 0;min-height:100svh;min-height:100dvh; }
   display: block;
   padding: 0;
   overflow: hidden;
-  background: linear-gradient(#fff 0%, #f8f8f8 47%, #fff 78%, var(--soft) 100%);
+  background:transparent;
 }
 .vote .work-meta,
 .vote .ad-navigation { display: none; }
@@ -120,7 +120,7 @@ body { padding:16px 0;min-height:100svh;min-height:100dvh; }
   border: 0;
   border-radius: 22px 22px 7px 7px;
   overflow: hidden;
-  background: linear-gradient(#fff 0%, #fff 70%, #ffffff3d 100%);
+  background:linear-gradient(180deg,#fff 0%,#fff 62%,#fffffff5 74%,#ffffff85 90%,#ffffff00 100%);
   box-shadow: none;
   transform-origin: 50% 0;
 }
@@ -178,11 +178,15 @@ body { padding:16px 0;min-height:100svh;min-height:100dvh; }
 .vote #next:disabled { color: #aaada8; }
 .vote #next span { display: none; }
 
-/* One feedback state owns the whole canvas, including navigation and gutters. */
-body.vote-feedback { background:linear-gradient(var(--feedback-top),var(--feedback-bottom)); }
-.phone.vote-feedback { background:linear-gradient(var(--feedback-top),var(--feedback-bottom)); }
-.phone.vote-feedback .wechat,.phone.vote-feedback .vote { background:transparent; }
-.phone.vote-feedback .ad-clone:not(.ad-outgoing) { visibility:hidden; }
+/* One continuous surface: sampled gray middle, white card, tinted lower wash. */
+body.vote-view { background:var(--feedback-bottom); }
+.phone[data-view="vote"] { background:linear-gradient(180deg,#fff 0%,#fdfdfd 10%,#f5f5f5 18.5%,#efefef 29%,#eee 39%,#f0f0f0 51%,#fdfdfd 65%,#fdfdfd 71%,var(--feedback-bottom) 88%,var(--feedback-bottom) 100%); }
+.phone[data-view="vote"] .wechat,.phone[data-view="vote"] .vote { background:transparent; }
+body.vote-feedback,.phone.vote-feedback { background:radial-gradient(ellipse 105% 48% at 110% 43%,var(--feedback-glow-soft) 0%,transparent 78%),linear-gradient(180deg,var(--feedback-rest-top) 0%,var(--feedback-mid) 55%,var(--feedback-bottom) 82%,var(--feedback-bottom) 100%); }
+body.vote-feedback[data-vote-phase="voting"],.phone.vote-feedback[data-vote-phase="voting"] { background:radial-gradient(ellipse 105% 48% at 110% 43%,var(--feedback-glow) 0%,transparent 78%),linear-gradient(180deg,var(--feedback-top) 0%,var(--feedback-mid) 55%,var(--feedback-bottom) 82%,var(--feedback-bottom) 100%); }
+.phone[data-vote-phase="voting"] .ad-clone { opacity:0;visibility:hidden; }
+.phone.vote-feedback #vote.browsing .ad-clone { opacity:1;visibility:visible; }
+.vote.flying .ad-image { opacity:1;transition:none; }
 .vote .ad-card { transition:translate .4s ease,scale .4s ease; }
 .vote.flying #ad-card { transform-origin:50% 0;translate:0 -14px;scale:1.035; }
 .vote.flying .vote-heading { opacity:0;transition:opacity .25s; }
