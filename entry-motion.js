@@ -10,12 +10,28 @@ const STAGES=[
 const DEPART=[[201,324],[472,114]],ARRIVE=[[110,837],[315,678]],TIME={grow:400,fold:720,fly:1320,exit:2020,reenter:2240,land:3120,end:3320};
 const clamp=x=>Math.max(0,Math.min(1,x)),ease=x=>{x=clamp(x);return x*x*(3-2*x)},mix=(a,b,t)=>a+(b-a)*t;
 function fold(stage,t){const e=ease(t);return STAGES[stage].map((a,i)=>{const b=STAGES[stage+1][i],moving=Math.hypot(b[0]-a[0],b[1]-a[1]),z=Math.sin(t*Math.PI)*Math.min(48,moving*.5)*(i===10?0:(stage===1&&i>4?0:1)),perspective=460/(460-z);return {x:90+(mix(a[0],b[0],e)-90)*perspective,y:80+(mix(a[1],b[1],e)-80)*perspective}})}
-if(typeof module!=='undefined')module.exports={STAGES,DEPART,ARRIVE,TIME,fold};
+// Fold the approved bitmap itself into three joined panels. At open=1 every panel is the identity.
+let materialUid=0;
+function wingMatrix(a,b,angle){
+ const dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length,nx=-uy,ny=ux,c=Math.cos(angle),q=Math.sin(angle),m00=ux*ux+c*nx*nx+.12*q*nx,m01=ux*uy+c*nx*ny+.12*q*ny,m10=uy*ux+c*ny*nx+.24*q*nx,m11=uy*uy+c*ny*ny+.24*q*ny;
+ return [m00,m10,m01,m11,a[0]-m00*a[0]-m01*a[1],a[1]-m10*a[0]-m11*a[1]];
+}
+function planeCreases(kind){return kind==='home'?[[170,20],[69.2,82],[86.5,81.5]]:[[170,20],[45,88.2],[64,101.4]]}
+function texturePlane(markup,kind='vote'){
+ const id='fold-material-'+materialUid++,[nose,far,near]=planeCreases(kind),edge=p=>nose[1]-nose[0]*(p[1]-nose[1])/(p[0]-nose[0]),yf=edge(far),yn=edge(near),regions={far:`0,0 180,0 180,20 170,20 0,${yf}`,keel:`0,${yf} 170,20 0,${yn}`,near:`170,20 180,20 180,160 0,160 0,${yn}`};
+ return `<svg class="textured-fold" data-fold-material="${id}" data-fold-open="0" viewBox="0 0 180 160" width="180" height="160" aria-hidden="true"><defs><g id="${id}-art">${markup}</g>${Object.entries(regions).map(([name,points])=>`<clipPath id="${id}-${name}"><polygon points="${points}"/></clipPath>`).join('')}</defs>${['keel','far','near'].map(name=>`<g data-fold-face="${name}"><g clip-path="url(#${id}-${name})"><use href="#${id}-art"/></g></g>`).join('')}</svg>`;
+}
+function posePlane(root,open,kind='vote'){
+ const t=Math.max(0,Math.min(1,open)),[nose,far,near]=planeCreases(kind);
+ for(const [name,axis,angle] of [['far',far,(1-t)*1.3],['near',near,-(1-t)*1.25]])root.querySelector(`[data-fold-face="${name}"]`).setAttribute('transform','matrix('+wingMatrix(nose,axis,angle).join(' ')+')');
+ root.querySelector('[data-fold-material]').setAttribute('data-fold-open',String(t));
+}
+if(typeof module!=='undefined')module.exports={STAGES,DEPART,ARRIVE,TIME,fold,wingMatrix,texturePlane,planeCreases};
 if(typeof document==='undefined')return;
-globalThis.FLIGHT_ENTRY={mount(root,{planeArtwork}={}){
+globalThis.FLIGHT_ENTRY={texturePlane,posePlane,mount(root,{planeArtwork}={}){
 const $=s=>root.querySelector(s),phone=root,paper=$('#shared-paper'),faces=$('.faces');let raf=0,start=0,arrived=false;
 faces.innerHTML=Array.from({length:10},()=>'<polygon/>').join('');const polygons=[...faces.children],originalPlane=planeArtwork?document.createElementNS('http://www.w3.org/2000/svg','g'):null;
-if(originalPlane){originalPlane.innerHTML=planeArtwork('mint');originalPlane.style.opacity='0';paper.querySelector('svg').append(originalPlane)}
+if(originalPlane){originalPlane.innerHTML=texturePlane(planeArtwork('mint'),'home');originalPlane.style.opacity='0';paper.querySelector('svg').append(originalPlane)}
 const baseColors=['#51e995','#19d681','#0cce77','#17ce7e','#02be70','#04c775','#00b86c','#41e58e','#5cef9f','#19d27c'];
 function drawPaper(value){
  const stage=Math.min(3,Math.floor(value)),t=value===4?1:value%1,points=fold(stage,t),center=points[10],finish=clamp((value-2.6)/1.4);
@@ -23,7 +39,7 @@ function drawPaper(value){
  $('.edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
  $('.crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
  $('.keel').setAttribute('d',`M${points[6].x} ${points[6].y}L${points[4].x} ${points[4].y}L${points[0].x} ${points[0].y}Z`);$('.keel').style.opacity=String(finish);
- if(originalPlane){const material=clamp((value-3.45)/.55);originalPlane.style.opacity=String(material);faces.style.opacity=String(1-material);$('.edge').style.opacity=String(1-material);$('.crease').style.opacity=String(1-material);$('.keel').style.opacity=String(finish*(1-material))}
+ if(originalPlane){const material=ease((value-2.05)/.75);originalPlane.style.opacity=String(material);posePlane(originalPlane,ease((value-2.8)/1.2),'home');faces.style.opacity=String(1-material);$('.edge').style.opacity=String(1-material);$('.crease').style.opacity=String(1-material);$('.keel').style.opacity=String(finish*(1-material))}
  $('.top-word').style.opacity=String(1-clamp(value*3.2));
 }
 function place(x,y,scale,angle,anchorY){paper.style.transform=`translate(${x}px,${y}px) rotate(${angle}deg) scale(${scale}) translate(-90px,-${anchorY}px)`;paper.dataset.centerX=x.toFixed(2);paper.dataset.centerY=y.toFixed(2);paper.dataset.rotation=angle.toFixed(2)}
@@ -38,7 +54,7 @@ function render(elapsed){
  const personal=ease((elapsed-2020)/430);$('.personal').style.opacity=String(personal);$('.welcome-copy').style.opacity=String(personal);$('.topic').style.opacity=String(ease((elapsed-1980)/400));
  const entry=ease((elapsed-3000)/320);$('.entry').style.opacity=String(entry);underline.style.strokeDashoffset=String(underLength*(1-entry));$('.rail-svg').style.opacity='0';
  if(elapsed>=2090&&!arrived){phone.classList.add('home-arrived');arrived=true}
- if(elapsed<TIME.fly){paper.style.opacity='1';const grow=ease((elapsed-TIME.grow)/(TIME.fold-TIME.grow));place(201,mix(324,316,grow)*(1-clamp(foldValue/4))+324*clamp(foldValue/4),mix(139/180,139/180*1.28,grow),0,mix(80,69,clamp(foldValue/4)))}
+ if(elapsed<TIME.fly){paper.style.opacity='1';const grow=ease((elapsed-TIME.grow)/(TIME.fold-TIME.grow));place(201,mix(324,316,grow)*(1-clamp(foldValue/4))+324*clamp(foldValue/4),mix(139/180,139/180*1.28,grow),-.9*ease((foldValue-2.8)/1.2),mix(80,69,clamp(foldValue/4)))}
  else if(elapsed<TIME.exit){
   const t=clamp((elapsed-TIME.fly)/(TIME.exit-TIME.fly)),travel=Math.pow(t,1.4);paper.style.opacity=String(1-clamp((t-.7)/.3));place(mix(DEPART[0][0],DEPART[1][0],travel),mix(DEPART[0][1],DEPART[1][1],travel),mix(139/180*1.28,.8,ease(t)),-.9,69);
  }else if(elapsed<TIME.reenter){paper.style.opacity='0';place(DEPART[1][0],DEPART[1][1],.8,-.9,69)}

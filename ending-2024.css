@@ -45,7 +45,11 @@ dialog.ending-dialog::backdrop { background: transparent; backdrop-filter: none;
 .ending-packet-spark { position: absolute; color: #ffe49d; width: 7.5%; height: 7.5%; }
 .ending-packet-spark.one { left: 10.4%; top: 51.5%; }
 .ending-packet-spark.two { right: 8.9%; top: 37.9%; }
-.ending-packet-close { position: absolute; top: 81.2%; left: 45.9%; display: flex; align-items: center; justify-content: center; width: 8.2%; aspect-ratio: 1; border: calc(2px * var(--ending-scale, 1)) solid #fff; border-radius: 50%; color: #fff; padding: 0 0 calc(3px * var(--ending-scale, 1)); background: transparent; font: 300 calc(31px * var(--ending-scale, 1))/1 Arial, sans-serif; }
+.ending-packet-close { position:absolute;top:81.2%;left:50%;width:calc(34px * var(--ending-scale,1));height:calc(34px * var(--ending-scale,1));min-width:0;min-height:0;transform:translateX(-50%);display:block;border:0;border-radius:0;padding:0;margin:0;background:transparent;color:#fff;font-size:0;line-height:0; }
+.ending-packet-close svg { display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:butt; }
+.ending-packet-close path { stroke-width:1.8; }
+.ending-packet-close::after { content:"";position:absolute;inset:calc(-5px * var(--ending-scale,1));border-radius:50%; }
+
 .ending-info-mask { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 0 8%; background: #0006; }
 .ending-info-card { position: relative; width: 100%; border-radius: calc(14px * var(--ending-scale, 1)); padding: calc(28px * var(--ending-scale, 1)); background: #fff; }
 .ending-info-card h2 { margin: 0 0 calc(18px * var(--ending-scale, 1)); font: 700 calc(20px * var(--ending-scale, 1))/1.4 RefSans, sans-serif; }

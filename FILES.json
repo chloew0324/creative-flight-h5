@@ -6,8 +6,8 @@
   },
   {
     "path": "app.js",
-    "bytes": 49724,
-    "sha256": "b42e9e810f8adc352a226fc9641257ecf47f757e58f6c89aa5399829dc53fb87"
+    "bytes": 50069,
+    "sha256": "1015a1b33cd0c36d6657d24918a906d9c442c6230762d91edad50e057097bfc0"
   },
   {
     "path": "assets/ads-2024/01-anta-frame.jpg",
@@ -116,18 +116,18 @@
   },
   {
     "path": "ending-2024.css",
-    "bytes": 7793,
-    "sha256": "64976909b9ad5522862ecc0a1c21a3c3c9535189c665ebe6322221de55904ecf"
+    "bytes": 8040,
+    "sha256": "37d7e9096d5bbc622fb1af7133ea0cdb6b9f6a0df61367111260d01355695f69"
   },
   {
     "path": "ending-2024.js",
-    "bytes": 10280,
-    "sha256": "239efd5a721c060de7518ac44e66b6bd55ce46b7d119ea912374170def826459"
+    "bytes": 10401,
+    "sha256": "9af49d579e28cc3aafb34ad9492a7f403810ae19fbe4a55e003381f4a9832809"
   },
   {
     "path": "entry-motion.js",
-    "bytes": 8081,
-    "sha256": "8d2bafc15b76ab45b6e0edce4d2f1e3bb15754be6a023d48955593101d979e16"
+    "bytes": 10037,
+    "sha256": "aaeab2407e0b207f3cb7ba1463990b602d38766b4850fc7251e47edeed2292b0"
   },
   {
     "path": "home-theme.css",
@@ -136,8 +136,8 @@
   },
   {
     "path": "index.html",
-    "bytes": 9058,
-    "sha256": "e40f9fa9e1bdfc8e7516ab360e78879db97c1b65d115a2d9e3bc9769cd59cd2e"
+    "bytes": 8960,
+    "sha256": "15c79bcaec043ba324e64a7ae863961356891e5dbac2cf19ba94d3eb3f80031d"
   },
   {
     "path": "integration.css",

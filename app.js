@@ -174,16 +174,16 @@ if(typeof document!=='undefined'){
  function launchFlight(){
   if(busy||view!=='vote')return;
   if(reduced()){renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票。');toast('喜欢，已启航。');return}
-  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),flyer=$('#flying-plane'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d');
+  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d');
   const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,coordinateScale=w/bounds.width,heartWidth=120,heartHeight=110,x0=(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=(launch.y-bounds.y+launch.height/2)*coordinateScale-top;
   const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   fold.style.width=heartWidth+'px';fold.style.height=heartHeight+'px';fold.style.left=x0-heartWidth/2+'px';fold.style.top=y0-heartHeight/2+'px';fold.style.opacity='1';fold.style.transform='none';
-  fold.innerHTML=`<svg class="folding-paper" viewBox="0 0 180 160" aria-hidden="true"><g>${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".24" stroke-width=".55" stroke-linejoin="round"/>').join('')}</g><path class="paper-outline" fill="none" stroke="white" stroke-opacity=".68" stroke-width=".7" stroke-linejoin="round"/><path class="paper-crease" fill="none" stroke="${p.ink}" stroke-opacity=".22" stroke-width=".7"/></svg>`;
-  const faces=[...fold.querySelectorAll('polygon')],outline=fold.querySelector('.paper-outline'),crease=fold.querySelector('.paper-crease');
-  flyer.style.width=heartWidth+'px';flyer.style.height=heartHeight+'px';flyer.innerHTML=plane(p);flyer.style.opacity='0';$('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
+  fold.innerHTML=`<svg class="folding-paper" viewBox="0 0 180 160" aria-hidden="true"><g class="fold-vector">${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".24" stroke-width=".55" stroke-linejoin="round"/>').join('')}<path class="paper-outline" fill="none" stroke="white" stroke-opacity=".68" stroke-width=".7" stroke-linejoin="round"/><path class="paper-crease" fill="none" stroke="${p.ink}" stroke-opacity=".22" stroke-width=".7"/></g><g class="fold-material">${globalThis.FLIGHT_ENTRY.texturePlane(plane(p),'vote')}</g></svg>`;
+  const faces=[...fold.querySelectorAll('.fold-vector polygon')],outline=fold.querySelector('.paper-outline'),crease=fold.querySelector('.paper-crease'),vector=fold.querySelector('.fold-vector'),material=fold.querySelector('.fold-material');
+  $('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
   overlay.hidden=false;overlay.classList.remove('flight-running');void overlay.offsetWidth;overlay.classList.add('flight-running');$('#vote').classList.add('flying');renderVote();
   const profile=voteFlightPath(state.index,w,h,x0,y0),{origin,control1,control2,destination}=profile;overlay.dataset.flightVariant=String(profile.index);canvas.dataset.effect=['paper-petals','prism-glints','wind-orbits'][profile.pattern];
-  const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration;let lastSpark=0;
+  const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration,smooth=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t)};let lastSpark=0,flightReady=false;
   function pointAt(t){return cubic(origin,control1,control2,destination,t)}
   function drawAtmosphere(elapsed){
    const pulse=Math.max(0,Math.min(1,(elapsed-180)/1000)),fade=Math.max(0,1-(elapsed-1550)/1500);
@@ -206,16 +206,18 @@ if(typeof document!=='undefined'){
    faces.forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`);face.setAttribute('fill',stage===0&&t<.35?heartShades[i]:stage>=2?planeShades[i]:i<5?p.main:p.light);face.setAttribute('fill-opacity',stage===0&&t<.35?(i===3?'.6':'1'):'1')});
    outline.setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');crease.setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
    const lift=Math.min(1,elapsed/750),scale=1+Math.min(1,elapsed/750)*.15;
-   fold.style.transform=`translateY(${-51*lift}px) rotateX(${Math.sin(elapsed/900)*3}deg) scale(${scale})`;fold.style.opacity=String(elapsed>foldEnd?Math.max(0,1-(elapsed-foldEnd)/100):1);
+   const texture=smooth((elapsed-430)/220);vector.style.opacity=String(1-texture);material.style.opacity=String(texture);globalThis.FLIGHT_ENTRY.posePlane(material,smooth((elapsed-650)/380),'vote');
+   fold.dataset.foldStage=elapsed<650?'folding':'wings';fold.style.transform=`translate3d(0,${-51*lift}px,0) scale(${scale})`;fold.style.opacity='1';
   }
   function draw(now){
    const elapsed=now-start;ctx.clearRect(0,0,w,h);drawAtmosphere(elapsed);
-   if(elapsed<takeoffAt)drawPaper(elapsed);
-   if(elapsed>=foldEnd){
+   if(elapsed<=takeoffAt)drawPaper(Math.min(elapsed,foldEnd));
+   if(elapsed>=takeoffAt){
+    if(!flightReady){drawPaper(foldEnd);flightReady=true}
     const t=Math.max(0,Math.min(1,(elapsed-takeoffAt)/flightDuration)),pos=t>0?pointAt(t):origin,tangent=cubicTangent(origin,control1,control2,destination,t);
-    const angle=(Math.atan2(tangent.y,tangent.x)*180/Math.PI+POSTER_NOSE_ANGLE)*Math.min(1,(elapsed-foldEnd)/120);
+    const angle=(Math.atan2(tangent.y,tangent.x)*180/Math.PI+POSTER_NOSE_ANGLE)*smooth(t/.08);
     const scale=t===0?1.15:1.15+Math.sin(Math.min(1,t/.4)*Math.PI)*.10-t*.79,roll=-Math.sin(t*Math.PI)*profile.bank;
-    flyer.style.opacity=String(Math.min(1,(elapsed-foldEnd)/100)*(t>.93?(1-t)/.07:1));flyer.style.transform=`translate3d(${pos.x-heartWidth/2}px,${pos.y-heartHeight/2}px,0) rotate(${angle}deg) rotateX(${roll}deg) scale(${scale})`;
+    fold.dataset.foldStage='flight';fold.style.opacity=String(t>.93?(1-t)/.07:1);fold.style.transform=`translate3d(${pos.x-x0}px,${pos.y-y0}px,0) rotate(${angle}deg) rotateX(${roll}deg) scale(${scale})`;
     if(t>0){$('#flight-copy span').textContent='喜欢，已启航。';trail.push({x:pos.x,y:pos.y,time:now,scale});if(now-lastSpark>34){lastSpark=now;sparks.push({x:pos.x+(Math.random()-.5)*10,y:pos.y+(Math.random()-.5)*10,vx:(Math.random()-.5)*14,vy:14+Math.random()*18,born:now,life:500+Math.random()*350,size:Math.random()*1.6+.6,star:Math.random()>.65})}}
    }
    while(trail.length&&now-trail[0].time>1100)trail.shift();
