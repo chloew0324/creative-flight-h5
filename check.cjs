@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const recordingAds=require('./ads-2024.js');
 global.window={FLIGHT_ADS_2024:recordingAds};
 global.FLIGHT_ADS_2024=recordingAds;
-const {normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,projectPaper,choicePaperGeometry,PAPER_STAGES,ADS,POSTER_ROUTE,voteFlightPath}=require('./app.js');
+const {normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,projectPaper,hingePaper,choicePaperGeometry,PAPER_STAGES,ADS,POSTER_ROUTE,voteFlightPath}=require('./app.js');
 assert.deepEqual(ADS,recordingAds);
 assert.deepEqual(ADS.map(ad=>[ad.id,ad.votes]),[['anta',228690],['porsche',201008],['vivo',354344],['gucci',174560],['kiehls',121832],['huawei',154875]]);
 assert.ok(ADS.every(ad=>ad.image.startsWith('ads-2024/')&&ad.crop.w>0&&ad.crop.h>0));
@@ -32,10 +32,12 @@ assert.ok(paths.every(p=>p.destination.x>402&&p.destination.y<p.origin.y));
 for(const p of paths){let angle=null;for(let i=0;i<=1000;i++){const v=cubicTangent(p.origin,p.control1,p.control2,p.destination,i/1000);assert.ok(Math.hypot(v.x,v.y)>1);assert.ok(v.x>0&&v.y<0,'All vote flights keep the original upper-right direction without backtracking');const next=Math.atan2(v.y,v.x);if(angle!==null)assert.ok(Math.abs(next-angle)<Math.PI/180);angle=next}}
 console.log('PASS: all six votes use one identical upper-right flight, with no stationary tangent, reversal or extra loop.');
 
-assert.deepEqual(choicePaperGeometry(3),projectPaper(foldPaper(3,1)),'Choice plane and voting plane share exactly the same final sheet');
+const wing={x:8,y:43,z:5},nose={x:170,y:20,z:0},root={x:76,y:76,z:0};
+for(let i=0;i<=100;i++){const p=hingePaper(wing,nose,root,i/100*1.38);for(const anchor of [nose,root])assert.ok(Math.abs(Math.hypot(p.x-anchor.x,p.y-anchor.y,p.z-anchor.z)-Math.hypot(wing.x-anchor.x,wing.y-anchor.y,wing.z-anchor.z))<1e-10,'A wing rotates rigidly about its crease without stretching')}
+assert.equal(choicePaperGeometry(3).length,6,'Six joined points define complete wings, body and folded underside');
 for(let i=0;i<=300;i++)assert.ok(choicePaperGeometry(i/100).every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));
 for(const join of [1,2]){const before=choicePaperGeometry(join-1e-6),after=choicePaperGeometry(join+1e-6);assert.ok(before.every((p,i)=>Math.hypot(p.x-after[i].x,p.y-after[i].y)<.001),'Folding stays connected across stage joins')}
-console.log('PASS: choice paper folds continuously into the same final vector sheet used for voting.');
+console.log('PASS: choice wings rotate around rigid crease axes without stretching; paper projection stays finite and continuous.');
 
 // The visible S route must remain tangent-continuous through every cubic join.
 const coordinates=POSTER_ROUTE.match(/-?\d+(?:\.\d+)?/g).map(Number);

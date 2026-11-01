@@ -14,4 +14,11 @@ const voting=source.slice(source.indexOf(' function launchFlight('),source.index
 assert.doesNotMatch(voting,/flyer|plane\(p\)|heartRect/,'Voting must not swap a folded vector sheet for a raster aircraft or measure a hovering button');
 assert.match(voting,/fold\.innerHTML=paperSheet\(p\)/);
 assert.match(voting,/fold\.style\.transform=`translate3d\(\$\{pos\.x-x0\}/);
-console.log('PASS: choice papers contain ten live vector faces and no screenshot crops; voting folds and flies the same sheet without a bitmap swap or hover-dependent origin.');
+const choiceTemplate=source.slice(source.indexOf(' function choiceSheet('),source.indexOf(' function drawChoiceSheet('));
+vm.runInContext(choiceTemplate+'choiceResult=choiceSheet(p);',context);
+assert.match(context.choiceResult,/data-paper-model="hinged-sheet"/);
+assert.equal((context.choiceResult.match(/data-choice-face=/g)||[]).length,4,'Four full surfaces replace the radial triangle fan');
+assert.doesNotMatch(context.choiceResult,/<polygon|<image|<img|\.png|\.jpg/);
+assert.match(source,/points\[4\]=hingePaper/);
+assert.match(source,/points\[5\]=hingePaper/);
+console.log('PASS: four complete paper surfaces with crease shadows and rigid wing hinges; no screenshot crops. Voting still flies its same sheet.');

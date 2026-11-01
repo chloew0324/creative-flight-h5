@@ -65,9 +65,19 @@ function projectPaper(nodes,tilt=0,relief=0){
  const angle=tilt*Math.PI/180;
  return nodes.map((point,i)=>{const y=point.y-80,z=point.z+(i===10?relief:0),ry=y*Math.cos(angle)-z*Math.sin(angle),rz=y*Math.sin(angle)+z*Math.cos(angle),perspective=520/(520-rz);return {x:90+(point.x-90)*perspective,y:80+ry*perspective}});
 }
+// Rotate a whole wing around its crease; its three edges remain rigid during closure.
+function hingePaper(point,a,b,angle){
+ const axis=[b.x-a.x,b.y-a.y,b.z-a.z],length=Math.hypot(...axis),[ux,uy,uz]=axis.map(n=>n/length),x=point.x-a.x,y=point.y-a.y,z=point.z-a.z,c=Math.cos(angle),s=Math.sin(angle),dot=ux*x+uy*y+uz*z;
+ return {x:a.x+x*c+(uy*z-uz*y)*s+ux*dot*(1-c),y:a.y+y*c+(uz*x-ux*z)*s+uy*dot*(1-c),z:a.z+z*c+(ux*y-uy*x)*s+uz*dot*(1-c)};
+}
 function choicePaperGeometry(value){
- const v=Math.max(0,Math.min(3,value)),stage=1+Math.min(2,Math.floor(v)),t=v===3?1:v%1;
- return projectPaper(foldPaper(stage,t),52*(1-v/3),12*(1-v/3));
+ const v=Math.max(0,Math.min(3,value)),smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)},tuck=smooth(v/.85),closure=smooth((v-.55)/1)*(1-smooth((v-1.65)/1.35));
+ // Nose, far crease, near crease, underside, far wing and near wing.
+ const opened=[[104,32,0],[78,114,0],[91,73,1],[78,114,-2],[28,59,0],[154,87,0]],folded=[[170,20,0],[76,76,0],[86,75,2],[72,116,-18],[8,43,5],[103,117,18]];
+ const points=opened.map((a,i)=>({x:a[0]+(folded[i][0]-a[0])*tuck,y:a[1]+(folded[i][1]-a[1])*tuck,z:a[2]+(folded[i][2]-a[2])*tuck}));
+ points[4]=hingePaper(points[4],points[0],points[1],closure*1.38);
+ points[5]=hingePaper(points[5],points[0],points[2],-closure*1.32);
+ return projectPaper(points,12,0);
 }
 function normalizeState(raw){
  const selected=[...new Set(Array.isArray(raw?.selected)?raw.selected.filter(i=>Number.isInteger(i)&&i>=0&&i<STANDARDS.length):[])];
@@ -81,7 +91,7 @@ function voteFlightPath(_index,w,h,x,y){
  const origin={x,y:y-51};
  return {index:0,origin,control1:{x:x+w*.22,y:origin.y-45},control2:{x:w*.98,y:h*.40},destination:{x:w*1.17,y:h*.07},duration:2100,bank:10,pattern:0};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,projectPaper,choicePaperGeometry,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,projectPaper,hingePaper,choicePaperGeometry,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -250,19 +260,31 @@ if(typeof document!=='undefined'){
   container.querySelector('.sheet-edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
   container.querySelector('.sheet-crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
  }
+ function choiceSheet(p){
+  const id='origami'+uid++,gradient=(name,colours)=>`<linearGradient id="${id}-${name}" x1="0" y1="0" x2=".72" y2="1">${colours.map((tone,i)=>`<stop offset="${i/(colours.length-1)}" data-choice-tone="${tone}"/>`).join('')}</linearGradient>`;
+  return `<svg class="choice-paper-svg" data-paper-id="${id}" data-paper-model="hinged-sheet" viewBox="0 0 180 160" aria-hidden="true"><defs>${gradient('far',['white','light','main'])}${gradient('near',['light','main','dark'])}${gradient('keel',['dark','deep'])}${gradient('return',['white','light'])}<filter id="${id}-crease" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.15"/></filter><filter id="${id}-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".82" numOctaves="2" seed="7" result="grain"/><feColorMatrix in="grain" type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feComposite in2="SourceGraphic" operator="in"/><feBlend in="SourceGraphic" mode="multiply"/></filter></defs><ellipse class="paper-contact-shadow" cx="90" cy="137" rx="48" ry="4" fill="#385346" opacity=".1"/><g filter="url(#${id}-grain)"><path data-choice-face="keel" fill="url(#${id}-keel)"/><path data-choice-face="return" fill="url(#${id}-return)"/><path data-choice-face="far" fill="url(#${id}-far)"/><path class="choice-fold-shadow" fill="#163d2c" opacity=".22" filter="url(#${id}-crease)"/><path data-choice-face="near" fill="url(#${id}-near)"/><path class="choice-paper-edge" fill="none" stroke="white" stroke-opacity=".8" stroke-width=".8" stroke-linejoin="round"/><path class="choice-fold-light" fill="none" stroke="white" stroke-opacity=".9" stroke-width=".85" stroke-linecap="round"/><path class="choice-fold-ink" fill="none" stroke="#1d553b" stroke-opacity=".2" stroke-width=".65"/></g></svg>`;
+ }
  function drawChoiceSheet(button,p,value){
-  button.dataset.foldValue=String(value);paintPaper(button,p,choicePaperGeometry(value),Math.min(1,value));
+  button.dataset.foldValue=String(value);
+  const pts=choicePaperGeometry(value),[nose,farRoot,nearRoot,keel,farWing,nearWing]=pts,mix=Math.min(1,value/1.1),blend=(gray,col)=>{const a=gray.match(/\w\w/g).map(n=>parseInt(n,16)),b=col.slice(1).match(/\w\w/g).map(n=>parseInt(n,16));return '#'+a.map((n,i)=>Math.round(n+(b[i]-n)*mix).toString(16).padStart(2,'0')).join('')},colours={white:'#ffffff',light:blend('f6f7f5',p.light),main:blend('d3d8d4',p.main),dark:blend('9fa9a2',p.dark),deep:blend('737f77',p.ink)};
+  button.querySelectorAll('[data-choice-tone]').forEach(stop=>stop.setAttribute('stop-color',colours[stop.dataset.choiceTone]));
+  const path=vertices=>'M'+vertices.map(v=>v.x.toFixed(3)+' '+v.y.toFixed(3)).join('L')+'Z',faces={keel:[farRoot,nose,keel],return:[keel,nearRoot,nearWing],far:[farWing,nose,farRoot],near:[nearRoot,nose,nearWing]};
+  for(const [name,vertices]of Object.entries(faces))button.querySelector(`[data-choice-face="${name}"]`).setAttribute('d',path(vertices));
+  button.querySelector('.choice-fold-shadow').setAttribute('d',path([farRoot,nose,{x:nearRoot.x+2,y:nearRoot.y+3},keel]));
+  button.querySelector('.choice-paper-edge').setAttribute('d',`M${farWing.x} ${farWing.y}L${nose.x} ${nose.y}L${nearWing.x} ${nearWing.y}`);
+  button.querySelector('.choice-fold-light').setAttribute('d',`M${farRoot.x} ${farRoot.y}L${nose.x} ${nose.y}L${nearRoot.x} ${nearRoot.y}`);
+  button.querySelector('.choice-fold-ink').setAttribute('d',`M${nearRoot.x+.6} ${nearRoot.y+.6}L${nose.x} ${nose.y}`);
  }
  function updateChoiceCount(){$('#selected-count').textContent=state.selected.length;$('#release').disabled=state.selected.length===0}
  function animateChoice(button,p,pressed){
   cancelAnimationFrame(choiceFrames.get(button));button.setAttribute('aria-pressed',String(pressed));
   if(reduced()){button.classList.remove('is-folding');drawChoiceSheet(button,p,pressed?3:0);return}
-  const start=performance.now(),from=Number(button.dataset.foldValue),target=pressed?3:0,duration=Math.max(160,(pressed?540:420)*Math.abs(target-from)/3);button.classList.add('is-folding');
+  const start=performance.now(),from=Number(button.dataset.foldValue),target=pressed?3:0,duration=Math.max(160,(pressed?640:460)*Math.abs(target-from)/3);button.classList.add('is-folding');
   function draw(now){const t=Math.min(1,(now-start)/duration),value=from+(target-from)*t;drawChoiceSheet(button,p,value);if(t<1)choiceFrames.set(button,requestAnimationFrame(draw));else{button.classList.remove('is-folding');choiceFrames.delete(button)}}
   draw(start);
  }
  function renderChoices(){
-  theme(PALETTES[0]);$('#chosen-ad-count').textContent=state.votes.length;$('#choices').innerHTML=STANDARDS.map((label,i)=>{const p=standardPaper(i),pressed=state.selected.includes(i);return `<button class="choice" data-standard="${i}" aria-label="${label}" aria-pressed="${pressed}" style="--accent:${p.main};--dark:${p.ink}"><span class="choice-sheet">${paperSheet(p,{contactShadow:true})}</span><span class="choice-label">${label}</span></button>`}).join('');
+  theme(PALETTES[0]);$('#chosen-ad-count').textContent=state.votes.length;$('#choices').innerHTML=STANDARDS.map((label,i)=>{const p=standardPaper(i),pressed=state.selected.includes(i);return `<button class="choice" data-standard="${i}" aria-label="${label}" aria-pressed="${pressed}" style="--accent:${p.main};--dark:${p.ink}"><span class="choice-sheet">${choiceSheet(p)}</span><span class="choice-label">${label}</span></button>`}).join('');
   $$('.choice').forEach(button=>drawChoiceSheet(button,standardPaper(Number(button.dataset.standard)),button.getAttribute('aria-pressed')==='true'?3:0));updateChoiceCount();
  }
  // Use the browser's SVG arc length for both artwork placement and animation.
