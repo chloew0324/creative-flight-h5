@@ -16,7 +16,7 @@
   function fitDialog(dialog) {
     const app = document.querySelector('#app'), nav = app.querySelector('.wechat');
     const bounds = app.getBoundingClientRect(), header = nav.getBoundingClientRect();
-    Object.assign(dialog.style, { left: bounds.left + 'px', top: header.bottom + 'px', width: bounds.width + 'px', height: Math.max(1, bounds.bottom - header.bottom) + 'px' });
+    Object.assign(dialog.style, { left: bounds.left + 'px', top: bounds.top + header.height + 'px', width: bounds.width + 'px', height: Math.max(1, bounds.height - header.height) + 'px' });
     dialog.style.setProperty('--ending-scale', bounds.width / 402);
   }
   function openInfo(title, body, buttons = '') {

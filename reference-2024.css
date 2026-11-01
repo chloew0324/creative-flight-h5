@@ -182,8 +182,8 @@ body { padding:16px 0;min-height:100svh;min-height:100dvh; }
 body.vote-view { background:var(--feedback-bottom); }
 .phone[data-view="vote"] { background:linear-gradient(180deg,#fff 0%,#fdfdfd 10%,#f5f5f5 18.5%,#efefef 29%,#eee 39%,#f0f0f0 51%,#fdfdfd 65%,#fdfdfd 71%,var(--feedback-bottom) 88%,var(--feedback-bottom) 100%); }
 .phone[data-view="vote"] .wechat,.phone[data-view="vote"] .vote { background:transparent; }
-body.vote-feedback,.phone.vote-feedback { background:radial-gradient(ellipse 105% 48% at 110% 43%,var(--feedback-glow-soft) 0%,transparent 78%),linear-gradient(180deg,var(--feedback-rest-top) 0%,var(--feedback-mid) 55%,var(--feedback-bottom) 82%,var(--feedback-bottom) 100%); }
-body.vote-feedback[data-vote-phase="voting"],.phone.vote-feedback[data-vote-phase="voting"] { background:radial-gradient(ellipse 105% 48% at 110% 43%,var(--feedback-glow) 0%,transparent 78%),linear-gradient(180deg,var(--feedback-top) 0%,var(--feedback-mid) 55%,var(--feedback-bottom) 82%,var(--feedback-bottom) 100%); }
+.phone.vote-feedback { background:radial-gradient(ellipse 105% 48% at 110% 43%,var(--feedback-glow-soft) 0%,transparent 78%),linear-gradient(180deg,var(--feedback-rest-top) 0%,var(--feedback-mid) 55%,var(--feedback-bottom) 82%,var(--feedback-bottom) 100%); }
+.phone.vote-feedback[data-vote-phase="voting"] { background:radial-gradient(ellipse 105% 48% at 110% 43%,var(--feedback-glow) 0%,transparent 78%),linear-gradient(180deg,var(--feedback-top) 0%,var(--feedback-mid) 55%,var(--feedback-bottom) 82%,var(--feedback-bottom) 100%); }
 .phone[data-vote-phase="voting"] .ad-clone { opacity:0;visibility:hidden; }
 .phone.vote-feedback #vote.browsing .ad-clone { opacity:1;visibility:visible; }
 .vote.flying .ad-image { opacity:1;transition:none; }
@@ -450,3 +450,19 @@ body.vote-feedback[data-vote-phase="voting"],.phone.vote-feedback[data-vote-phas
   .phone[data-view="result"],
   .phone[data-view="cards"] { border-radius: 0; }
 }
+
+/* Native WeChat owns the one title bar; crop its web duplicate without leaving a blank strip. */
+:root.native-wechat { --reference-height:775px;--reference-nav:0px; }
+.native-wechat .phone > .wechat,.native-wechat .phone[data-view="result"] > .wechat { display:none; }
+.phone > main { z-index:1; }
+.phone > .vote-surface { position:absolute;inset:0;z-index:0;pointer-events:none;display:none;overflow:hidden; }
+.phone[data-view="vote"] > .vote-surface { display:block; }
+.vote-surface-layer { position:absolute;inset:0;pointer-events:none; }
+body { transition:background-color 850ms ease; }
+body.vote-view,body.vote-feedback,body.vote-feedback[data-vote-phase="voting"] { background-image:none;background-color:var(--feedback-bottom); }
+@media(prefers-reduced-motion:reduce){body{transition:none}}
+
+/* Recording: one small, low oval under every heart, including carousel neighbours. */
+.vote .heart-area::after { content:"";position:absolute;top:102px;left:50%;width:48px;height:6px;transform:translateX(-50%);border-radius:50%;background:var(--accent);opacity:.13;filter:blur(.3px);pointer-events:none;transition:opacity 220ms ease; }
+.vote.flying .heart-area::after { opacity:0; }
+@media(prefers-reduced-motion:reduce){.vote .heart-area::after{transition:none}}

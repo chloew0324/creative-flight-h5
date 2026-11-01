@@ -17,11 +17,12 @@ const VOTE_PALETTES=[
  {id:'mint',main:'#17ce69',light:'#b4f99b',dark:'#00ae57',ink:'#17994d',soft:'#efffe8',feedbackTop:'#ccfecd',feedbackMid:'#dbfede',feedbackGlow:'#a6f599',feedbackBottom:'#e6fee4'}
 ];
 const votePalette=index=>VOTE_PALETTES[[0,1,0,2,0,3][index]];
+const AD_CARD_GAP=42,AD_ORBIT_RADIUS=3200;
 const wrapAdIndex=index=>(index%ADS.length+ADS.length)%ADS.length;
 // Top-centres travel on one large circle; each card follows its tangent.
 // At the adjacent slots this yields the recording's visible ±6° in-plane tilt.
 function adOrbitPose(position,step,arrival=1){
- const radius=3000,angle=Math.asin(step/radius)*position,growth=.58+.42*arrival;
+ const radius=AD_ORBIT_RADIUS,angle=Math.asin(step/radius)*position,growth=.58+.42*arrival;
  const x=radius*Math.sin(angle)*growth,y=radius*(1-Math.cos(angle))*growth+150*(1-arrival),rotation=angle*180/Math.PI,yaw=-rotation*.6,scale=growth*(1-.02*Math.min(6,Math.abs(position)));
  const n=value=>Number(value.toFixed(4));
  return {x,y,rotation,yaw,scale,transform:`translate3d(${n(x)}px,${n(y)}px,0) rotateZ(${n(rotation)}deg) rotateY(${n(yaw)}deg) scale(${n(scale)})`};
@@ -33,8 +34,8 @@ function adEntryFrames(x,step){return Array.from({length:65},(_,i)=>{
 function adSlideFrames(from,to,step){return Array.from({length:25},(_,i)=>{
  const t=i/24;return {transform:adOrbitPose(from+(to-from)*t,step).transform,offset:t};
 })}
-function previewScale(width,height,insets={top:0,right:0,bottom:0,left:0}){
- return Math.max(.01,Math.min(1,(width-insets.left-insets.right)/402,(height-insets.top-insets.bottom-(width>=460?32:0))/827));
+function previewScale(width,height,insets={top:0,right:0,bottom:0,left:0},referenceHeight=827){
+ return Math.max(.01,Math.min(1,(width-insets.left-insets.right)/402,(height-insets.top-insets.bottom-(width>=460?32:0))/referenceHeight));
 }
 const STANDARDS=['点子新鲜','故事动人','画面好看','文案有梗','互动好玩','细节用心'];
 const CARD_COPY=[
@@ -73,7 +74,7 @@ function voteFlightPath(_index,w,h,x,y){
  const origin={x,y:y-51};
  return {index:0,origin,control1:{x:x+w*.22,y:origin.y-45},control2:{x:w*.98,y:h*.40},destination:{x:w*1.17,y:h*.07},duration:2100,bank:10,pattern:0};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale,AD_CARD_GAP,AD_ORBIT_RADIUS};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -81,11 +82,23 @@ if(typeof document!=='undefined'){
  const asset=name=>globalThis.FLIGHT_ASSETS?.[name]||'assets/'+name;
  const choiceFrames=new Map();
  let currentCard='0',fontPromise=null,savingArtwork=false;
- let state=normalizeState(null),view='cover',busy=false,frame=0,journeyFrame=0,journeyTimer=0,toastTimer=0,transitionTimer=0,uid=0,pointer=null;
+ let state=normalizeState(null),view='cover',busy=false,frame=0,journeyFrame=0,toastTimer=0,transitionTimer=0,uid=0,pointer=null;
  try{state=normalizeState(JSON.parse(localStorage.getItem(STORE)||'null'))}catch{}
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  function saveState(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch{}}
  function theme(p){app.style.setProperty('--accent',p.main);app.style.setProperty('--soft',p.soft);app.style.setProperty('--dark',p.dark);app.style.setProperty('--ink',p.ink)}
+ let previousVoteSurface=null;
+ function syncVoteSurface(){
+  const surface=$('#vote-surface');
+  if(view!=='vote'){previousVoteSurface=null;surface.replaceChildren();return}
+  const style=getComputedStyle(app),next={image:style.backgroundImage,colour:style.backgroundColor};
+  if(previousVoteSurface&&(previousVoteSurface.image!==next.image||previousVoteSurface.colour!==next.colour)&&!reduced()){
+   const layer=document.createElement('div');layer.className='vote-surface-layer';layer.style.backgroundImage=previousVoteSurface.image;layer.style.backgroundColor=previousVoteSurface.colour;
+   // Insert behind any fade already running, preserving its current composite when interrupted.
+   surface.prepend(layer);layer.animate([{opacity:1},{opacity:0}],{duration:850,easing:'cubic-bezier(.22,.61,.36,1)',fill:'forwards'}).finished.then(()=>layer.remove(),()=>layer.remove());
+  }else if(reduced())surface.replaceChildren();
+  previousVoteSurface=next;
+ }
  function voteFeedback(active,p){
   app.classList.toggle('vote-feedback',active);document.body.classList.toggle('vote-feedback',active);
   document.body.classList.toggle('vote-view',view==='vote');
@@ -95,7 +108,7 @@ if(typeof document!=='undefined'){
  }
  function syncVotePhase(){
   const vote=$('#vote'),phase=view!=='vote'?'off':vote.classList.contains('entering')?'entry':vote.classList.contains('browsing')?'browsing':vote.classList.contains('flying')?'voting':state.votes.includes(ADS[state.index].id)?'voted':'idle';
-  app.dataset.votePhase=phase;document.body.dataset.votePhase=phase;
+  app.dataset.votePhase=phase;document.body.dataset.votePhase=phase;syncVoteSurface();
  }
  function setAdBrowsing(active){$('#vote').classList.toggle('browsing',active);syncVotePhase()}
  function heart(p){
@@ -123,7 +136,7 @@ if(typeof document!=='undefined'){
   if(['journey','result','cards'].includes(next)&&!state.selected.length)next='choose';
   if(['result','cards','gift'].includes(next)&&!state.locked)next='choose';
   choiceFrames.forEach(id=>cancelAnimationFrame(id));choiceFrames.clear();
-  cancelAnimationFrame(journeyFrame);clearTimeout(journeyTimer);clearTimeout(transitionTimer);stopFlight();app.classList.remove('poster-flying');closeDialogs();view=next;app.dataset.view=next;
+  cancelAnimationFrame(journeyFrame);clearTimeout(transitionTimer);stopFlight();app.classList.remove('poster-flying');closeDialogs();view=next;app.dataset.view=next;
   $$('.page').forEach(el=>el.hidden=el.id!==next);$('#vote').classList.remove('entering','browsing');pointer=null;$('#back').textContent='×';theme(PALETTES[0]);voteFeedback(false,PALETTES[0]);
   if(next==='cover')entryController?.showHome();else entryController?.cancel();
   if(next==='vote'){renderVote();if(entry&&!reduced())enterAds()}
@@ -142,7 +155,7 @@ if(typeof document!=='undefined'){
   $('#next').textContent=state.votes.length?'下一步':'快去投票';
   if(!busy){$('#ad-card').style.transform=adOrbitPose(0,slideStep()).transform;syncNeighbors()}
  }
- function slideStep(){return $('#ad-card').offsetWidth+20}
+ function slideStep(){return $('#ad-card').offsetWidth+AD_CARD_GAP}
  function makeSlide(index){
   const ad=ADS[index],p=votePalette(index),clone=$('#ad-card').cloneNode(true),voted=state.votes.includes(ad.id);
   clone.querySelector('#ad-image').innerHTML=adArtwork(ad);clone.querySelector('#vote-heart').innerHTML=heart(p);clone.querySelector('#ad-brand').textContent=ad.brand;clone.querySelector('#vote-button').hidden=voted;clone.querySelector('#voted').hidden=!voted;clone.querySelector('#voted').classList.add('voted-state');clone.querySelector('.voted-icon').innerHTML=heart(p);
@@ -288,9 +301,8 @@ if(typeof document!=='undefined'){
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 780" ${exported?'width="1170" height="2340"':''} font-family="RefSans,PingFang SC,sans-serif"><defs>${fonts}</defs><image href="${globalThis.FLIGHT_VISUALS.background}" width="390" height="780"/><g text-anchor="middle"><text x="195" y="97" font-size="34" font-weight="700" letter-spacing=".7" fill="#00b773">我的创意航线</text><text x="195" y="132" font-size="21" font-weight="700" fill="#00b773">腾讯十周年</text><text x="195" y="160" font-size="14" fill="#999e9c">谢谢你，让好创意飞得更远</text></g><path id="${routeId}" d="${POSTER_ROUTE}" fill="none" stroke="#bbc5c3" stroke-opacity=".85" stroke-width="1.15" stroke-dasharray="7 8" stroke-linecap="round"/>${selected.map((s,i)=>{const p=poses[i],distance=p.end*length,point=routeSample(route,distance,p.direction);return `<g class="poster-plane" data-width="${p.w}" data-route-end="${p.end}" data-route-distance="${distance}" data-direction="${p.direction}" transform="${planeTransform(point,p.w)}"><svg width="${p.w}" height="${p.w*160/180}" viewBox="0 0 180 160">${plane(standardPaper(s)).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</svg></g><text class="poster-label" x="0" y="0" transform="translate(${p.lx} ${p.ly}) rotate(-10) skewX(-6)" font-size="${many?17:19}" font-weight="700" fill="#006d4e">${STANDARDS[s]}</text>`}).join('')}<g transform="rotate(-3 195 710)"><text x="195" y="713" text-anchor="middle" font-family="FlightHand,HanziPen SC,cursive" font-size="24" fill="#007b59">十年，因你而更有创意</text><path d="M176 736Q242 714 300 724" fill="none" stroke="#00d386" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
  }
  function flyPoster(){
-  clearTimeout(journeyTimer);
   if(app.classList.contains('poster-flying'))return;
-  if(reduced()){journeyTimer=setTimeout(completeJourney,500);return;}
+  if(reduced()){finishPoster();return;}
   const route=$('#poster-route'),length=route.getTotalLength(),groups=[...$('#route-card').querySelectorAll('.poster-plane')],labels=[...$('#route-card').querySelectorAll('.poster-label')],start=performance.now(),button=$('#save');
   app.classList.add('poster-flying');button.disabled=true;button.textContent='创意正在飞行…';
   const flights=groups.map((el,i)=>{
@@ -312,9 +324,12 @@ if(typeof document!=='undefined'){
     f.label.style.opacity=String(Math.max(0,(t-.84)/.16));
    });
    if(!finished)journeyFrame=requestAnimationFrame(draw);
-   else{app.classList.remove('poster-flying');button.disabled=false;button.innerHTML='挑选我的创意卡片 <span>→</span>';announce('纸飞机已沿航线抵达，你的创意航线已经完成。');journeyTimer=setTimeout(completeJourney,1000)}
+   else finishPoster();
   }
   journeyFrame=requestAnimationFrame(draw);
+ }
+ function finishPoster(){
+  app.classList.remove('poster-flying');const button=$('#save');button.disabled=false;button.innerHTML='挑选我的创意卡片 <span>→</span>';announce('纸飞机已沿航线抵达，点击按钮挑选你的创意卡片。');
  }
  function renderResult(){theme(PALETTES[0]);$('#route-card').innerHTML=posterSVG(state.selected);$('#route-card').setAttribute('aria-label','我的创意航线：'+state.selected.map(i=>STANDARDS[i]).join('、'))}
  function completeJourney(){
@@ -386,7 +401,7 @@ if(typeof document!=='undefined'){
  $('#cover').addEventListener('wheel',event=>{if(event.deltaY>30&&view==='cover'&&!busy)beginVoting()},{passive:true});
  $('#cards').addEventListener('wheel',event=>{if(event.deltaY>40&&view==='cards')show('gift')},{passive:true});
  window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);cancelAnimationFrame(journeyFrame)});
- function fitPreview(){const height=window.visualViewport?.height||window.innerHeight,style=getComputedStyle(document.documentElement),insets=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,parseFloat(style.getPropertyValue('--safe-'+side))||0]));app.style.setProperty('--preview-scale',String(previewScale(window.innerWidth,height,insets)))}
+ function fitPreview(){const height=window.visualViewport?.height||window.innerHeight,style=getComputedStyle(document.documentElement),insets=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,parseFloat(style.getPropertyValue('--safe-'+side))||0]));app.style.setProperty('--preview-scale',String(previewScale(window.innerWidth,height,insets,document.documentElement.classList.contains('native-wechat')?775:827)))}
  window.addEventListener('resize',fitPreview);window.visualViewport?.addEventListener('resize',fitPreview);fitPreview();
  const entryURL=new URL(location.href);
  if(entryURL.searchParams.has('view')){entryURL.searchParams.delete('view');history.replaceState(null,'',entryURL)}
