@@ -480,3 +480,5 @@ body.vote-view,body.vote-feedback,body.vote-feedback[data-vote-phase="voting"] {
 .phone[data-vote-phase="returning"] .ad-clone { opacity:1;visibility:visible;transition:opacity 400ms 120ms ease,visibility 0s; }
 
 .viewport-fill .phone > main > #vote,.viewport-fill .phone > main > #cards { overflow:visible; }
+
+.viewport-fill body.vote-view { background-color:var(--feedback-bottom); }
