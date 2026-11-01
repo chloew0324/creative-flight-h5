@@ -5,27 +5,30 @@ const STAGES=[
  [[90,8],[118,36],[139,57],[160,78],[125,113],[90,148],[55,113],[20,78],[48,50],[69,29],[90,78]],
  [[90,8],[62,36],[41,57],[20,78],[55,113],[90,148],[55,113],[20,78],[48,50],[69,29],[90,78]],
  [[166,20],[166,20],[104,61],[73,78],[84,105],[103,113],[84,105],[73,78],[104,61],[166,20],[93,80]],
- [[170,20],[170,20],[170,20],[103,117],[72,106],[76,76],[76,76],[8,43],[89,31.5],[170,20],[86,75]]
+ [[170,20],[170,20],[170,20],[103,117],[72,106],[86,75],[76,76],[8,43],[89,31.5],[170,20],[86,75]]
 ];
 const DEPART=[[201,324],[472,114]],ARRIVE=[[110,837],[315,678]],TIME={grow:400,fold:720,fly:1320,exit:2020,reenter:2240,land:3120,end:3320};
 const clamp=x=>Math.max(0,Math.min(1,x)),ease=x=>{x=clamp(x);return x*x*(3-2*x)},mix=(a,b,t)=>a+(b-a)*t;
 function fold(stage,t){const e=ease(t);return STAGES[stage].map((a,i)=>{const b=STAGES[stage+1][i],moving=Math.hypot(b[0]-a[0],b[1]-a[1]),z=Math.sin(t*Math.PI)*Math.min(48,moving*.5)*(i===10?0:(stage===1&&i>4?0:1)),perspective=460/(460-z);return {x:90+(mix(a[0],b[0],e)-90)*perspective,y:80+(mix(a[1],b[1],e)-80)*perspective}})}
 if(typeof module!=='undefined')module.exports={STAGES,DEPART,ARRIVE,TIME,fold};
 if(typeof document==='undefined')return;
-globalThis.FLIGHT_ENTRY={mount(root){
+globalThis.FLIGHT_ENTRY={mount(root,{planeArtwork}={}){
 const $=s=>root.querySelector(s),phone=root,paper=$('#shared-paper'),faces=$('.faces');let raf=0,start=0,arrived=false;
-faces.innerHTML=Array.from({length:10},()=>'<polygon/>').join('');const polygons=[...faces.children];
+faces.innerHTML=Array.from({length:10},()=>'<polygon/>').join('');const polygons=[...faces.children],originalPlane=planeArtwork?document.createElementNS('http://www.w3.org/2000/svg','g'):null;
+if(originalPlane){originalPlane.innerHTML=planeArtwork('mint');originalPlane.style.opacity='0';paper.querySelector('svg').append(originalPlane)}
 const baseColors=['#51e995','#19d681','#0cce77','#17ce7e','#02be70','#04c775','#00b86c','#41e58e','#5cef9f','#19d27c'];
 function drawPaper(value){
  const stage=Math.min(3,Math.floor(value)),t=value===4?1:value%1,points=fold(stage,t),center=points[10],finish=clamp((value-2.6)/1.4);
  polygons.forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`);face.setAttribute('fill',value<2.6?baseColors[i]:i===2?'url(#paper-near)':i===3?'#effff6':i===7||i===8?'url(#paper-light)':i===6?'#22c982':baseColors[i])});
  $('.edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
  $('.crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
- $('.keel').setAttribute('d',`M${points[6].x} ${points[6].y}L${points[4].x} ${points[4].y}L${points[0].x} ${points[0].y}Z`);$('.keel').style.opacity=String(finish);$('.top-word').style.opacity=String(1-clamp(value*3.2));
+ $('.keel').setAttribute('d',`M${points[6].x} ${points[6].y}L${points[4].x} ${points[4].y}L${points[0].x} ${points[0].y}Z`);$('.keel').style.opacity=String(finish);
+ if(originalPlane){const material=clamp((value-3.45)/.55);originalPlane.style.opacity=String(material);faces.style.opacity=String(1-material);$('.edge').style.opacity=String(1-material);$('.crease').style.opacity=String(1-material);$('.keel').style.opacity=String(finish*(1-material))}
+ $('.top-word').style.opacity=String(1-clamp(value*3.2));
 }
 function place(x,y,scale,angle,anchorY){paper.style.transform=`translate(${x}px,${y}px) rotate(${angle}deg) scale(${scale}) translate(-90px,-${anchorY}px)`;paper.dataset.centerX=x.toFixed(2);paper.dataset.centerY=y.toFixed(2);paper.dataset.rotation=angle.toFixed(2)}
 function smallPlane(main,light,dark){return `<svg viewBox="0 0 180 160"><path d="M76 76 72 106 170 20Z" fill="${dark}"/><path d="M8 43 170 20 76 76Z" fill="${light}"/><path d="M72 106 103 117 86 75Z" fill="#fffdf9"/><path d="M86 75 170 20 103 117Z" fill="${main}"/><path d="M76 76 170 20 86 75 72 106Z" fill="${dark}" opacity=".32"/><path d="M8 43 170 20 103 117M76 76 170 20 86 75" fill="none" stroke="#fff" stroke-width="1.1"/></svg>`}
-$('.coral').innerHTML=smallPlane('#faab94','#ffe0d0','#ca6e59');$('.lilac').innerHTML=smallPlane('#b69be4','#e9e0fc','#7d5fac');
+$('.coral').innerHTML=planeArtwork?planeArtwork('coral'):smallPlane('#faab94','#ffe0d0','#ca6e59');$('.lilac').innerHTML=planeArtwork?planeArtwork('lilac'):smallPlane('#b69be4','#e9e0fc','#7d5fac');
 const underline=$('.underline path'),underLength=underline.getTotalLength();underline.style.strokeDasharray=String(underLength);
 function render(elapsed){
  const phase=elapsed<TIME.grow?'intro':elapsed<TIME.fold?'grow':elapsed<TIME.fly?'fold':elapsed<TIME.exit?'exit-flight':elapsed<TIME.reenter?'between-scenes':elapsed<TIME.land?'entry-flight':'landed';phone.dataset.phase=phase;phone.dataset.elapsed=Math.round(elapsed);

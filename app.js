@@ -55,29 +55,11 @@ const PAPER_STAGES=[
  [[90,8],[118,36],[139,57],[160,78],[125,113],[90,148],[55,113],[20,78],[48,50],[69,29],[90,78]],
  [[90,8],[62,36],[41,57],[20,78],[55,113],[90,148],[55,113],[20,78],[48,50],[69,29],[90,78]],
  [[166,20],[166,20],[104,61],[73,78],[84,105],[103,113],[84,105],[73,78],[104,61],[166,20],[93,80]],
- [[170,20],[170,20],[170,20],[103,117],[72,106],[76,76],[76,76],[8,43],[89,31.5],[170,20],[86,75]]
+ [[170,20],[170,20],[170,20],[103,117],[72,106],[86,75],[76,76],[8,43],[89,31.5],[170,20],[86,75]]
 ];
 function foldPaper(stage,t){
  const from=PAPER_STAGES[stage],to=PAPER_STAGES[stage+1],ease=t*t*(3-2*t);
  return from.map((a,i)=>{const b=to[i],moving=Math.hypot(b[0]-a[0],b[1]-a[1]);return {x:a[0]+(b[0]-a[0])*ease,y:a[1]+(b[1]-a[1])*ease,z:Math.sin(t*Math.PI)*Math.min(48,moving*.5)*(i===10?0:(stage===1&&i>4?0:1))}});
-}
-function projectPaper(nodes,tilt=0,relief=0){
- const angle=tilt*Math.PI/180;
- return nodes.map((point,i)=>{const y=point.y-80,z=point.z+(i===10?relief:0),ry=y*Math.cos(angle)-z*Math.sin(angle),rz=y*Math.sin(angle)+z*Math.cos(angle),perspective=520/(520-rz);return {x:90+(point.x-90)*perspective,y:80+ry*perspective}});
-}
-// Rotate a whole wing around its crease; its three edges remain rigid during closure.
-function hingePaper(point,a,b,angle){
- const axis=[b.x-a.x,b.y-a.y,b.z-a.z],length=Math.hypot(...axis),[ux,uy,uz]=axis.map(n=>n/length),x=point.x-a.x,y=point.y-a.y,z=point.z-a.z,c=Math.cos(angle),s=Math.sin(angle),dot=ux*x+uy*y+uz*z;
- return {x:a.x+x*c+(uy*z-uz*y)*s+ux*dot*(1-c),y:a.y+y*c+(uz*x-ux*z)*s+uy*dot*(1-c),z:a.z+z*c+(ux*y-uy*x)*s+uz*dot*(1-c)};
-}
-function choicePaperGeometry(value){
- const v=Math.max(0,Math.min(3,value)),smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)},tuck=smooth(v/.85),closure=smooth((v-.55)/1)*(1-smooth((v-1.65)/1.35));
- // Nose, far crease, near crease, underside, far wing and near wing.
- const opened=[[104,32,0],[78,114,0],[91,73,1],[78,114,-2],[28,59,0],[154,87,0]],folded=[[170,20,0],[76,76,0],[86,75,2],[72,116,-18],[8,43,5],[103,117,18]];
- const points=opened.map((a,i)=>({x:a[0]+(folded[i][0]-a[0])*tuck,y:a[1]+(folded[i][1]-a[1])*tuck,z:a[2]+(folded[i][2]-a[2])*tuck}));
- points[4]=hingePaper(points[4],points[0],points[1],closure*1.38);
- points[5]=hingePaper(points[5],points[0],points[2],-closure*1.32);
- return projectPaper(points,12,0);
 }
 function normalizeState(raw){
  const selected=[...new Set(Array.isArray(raw?.selected)?raw.selected.filter(i=>Number.isInteger(i)&&i>=0&&i<STANDARDS.length):[])];
@@ -91,7 +73,7 @@ function voteFlightPath(_index,w,h,x,y){
  const origin={x,y:y-51};
  return {index:0,origin,control1:{x:x+w*.22,y:origin.y-45},control2:{x:w*.98,y:h*.40},destination:{x:w*1.17,y:h*.07},duration:2100,bank:10,pattern:0};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,projectPaper,hingePaper,choicePaperGeometry,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -192,14 +174,16 @@ if(typeof document!=='undefined'){
  function launchFlight(){
   if(busy||view!=='vote')return;
   if(reduced()){renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票。');toast('喜欢，已启航。');return}
-  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d');
+  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),flyer=$('#flying-plane'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d');
   const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,coordinateScale=w/bounds.width,heartWidth=120,heartHeight=110,x0=(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=(launch.y-bounds.y+launch.height/2)*coordinateScale-top;
   const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   fold.style.width=heartWidth+'px';fold.style.height=heartHeight+'px';fold.style.left=x0-heartWidth/2+'px';fold.style.top=y0-heartHeight/2+'px';fold.style.opacity='1';fold.style.transform='none';
-  fold.innerHTML=paperSheet(p);$('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
+  fold.innerHTML=`<svg class="folding-paper" viewBox="0 0 180 160" aria-hidden="true"><g>${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".24" stroke-width=".55" stroke-linejoin="round"/>').join('')}</g><path class="paper-outline" fill="none" stroke="white" stroke-opacity=".68" stroke-width=".7" stroke-linejoin="round"/><path class="paper-crease" fill="none" stroke="${p.ink}" stroke-opacity=".22" stroke-width=".7"/></svg>`;
+  const faces=[...fold.querySelectorAll('polygon')],outline=fold.querySelector('.paper-outline'),crease=fold.querySelector('.paper-crease');
+  flyer.style.width=heartWidth+'px';flyer.style.height=heartHeight+'px';flyer.innerHTML=plane(p);flyer.style.opacity='0';$('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
   overlay.hidden=false;overlay.classList.remove('flight-running');void overlay.offsetWidth;overlay.classList.add('flight-running');$('#vote').classList.add('flying');renderVote();
   const profile=voteFlightPath(state.index,w,h,x0,y0),{origin,control1,control2,destination}=profile;overlay.dataset.flightVariant=String(profile.index);canvas.dataset.effect=['paper-petals','prism-glints','wind-orbits'][profile.pattern];
-  const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration;let lastSpark=0,planeReady=false;
+  const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration;let lastSpark=0;
   function pointAt(t){return cubic(origin,control1,control2,destination,t)}
   function drawAtmosphere(elapsed){
    const pulse=Math.max(0,Math.min(1,(elapsed-180)/1000)),fade=Math.max(0,1-(elapsed-1550)/1500);
@@ -217,19 +201,21 @@ if(typeof document!=='undefined'){
   }
   function drawPaper(elapsed){
    let stage=0,t=0;for(let i=0;i<steps.length;i++)if(elapsed>=steps[i].at){stage=i;t=Math.min(1,(elapsed-steps[i].at)/steps[i].duration)}
-   paintPaper(fold,p,projectPaper(foldPaper(stage,t)),1);
+   const nodes=foldPaper(stage,t),angle=(stage===2?Math.sin(t*Math.PI)*.14:0),project=point=>{const x=point.x-90,z=point.z,rx=x*Math.cos(angle)-z*Math.sin(angle),rz=x*Math.sin(angle)+z*Math.cos(angle),perspective=460/(460-rz);return {x:90+rx*perspective,y:80+(point.y-80)*perspective}},points=nodes.map(project),center=points[10];
+   const heartShades=[p.main,p.main,p.main,p.dark,p.main,p.main,p.main,p.light,p.light,p.main],planeShades=[p.main,p.main,p.main,p.light,p.dark,p.dark,p.light,p.light,p.light,p.light];
+   faces.forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`);face.setAttribute('fill',stage===0&&t<.35?heartShades[i]:stage>=2?planeShades[i]:i<5?p.main:p.light);face.setAttribute('fill-opacity',stage===0&&t<.35?(i===3?'.6':'1'):'1')});
+   outline.setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');crease.setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
    const lift=Math.min(1,elapsed/750),scale=1+Math.min(1,elapsed/750)*.15;
-   fold.style.transform=`translate3d(0,${-51*lift}px,0) scale(${scale})`;fold.style.opacity='1';
+   fold.style.transform=`translateY(${-51*lift}px) rotateX(${Math.sin(elapsed/900)*3}deg) scale(${scale})`;fold.style.opacity=String(elapsed>foldEnd?Math.max(0,1-(elapsed-foldEnd)/100):1);
   }
   function draw(now){
    const elapsed=now-start;ctx.clearRect(0,0,w,h);drawAtmosphere(elapsed);
-   if(elapsed<foldEnd)drawPaper(elapsed);
+   if(elapsed<takeoffAt)drawPaper(elapsed);
    if(elapsed>=foldEnd){
-    if(!planeReady){drawPaper(foldEnd);planeReady=true}
     const t=Math.max(0,Math.min(1,(elapsed-takeoffAt)/flightDuration)),pos=t>0?pointAt(t):origin,tangent=cubicTangent(origin,control1,control2,destination,t);
     const angle=(Math.atan2(tangent.y,tangent.x)*180/Math.PI+POSTER_NOSE_ANGLE)*Math.min(1,(elapsed-foldEnd)/120);
     const scale=t===0?1.15:1.15+Math.sin(Math.min(1,t/.4)*Math.PI)*.10-t*.79,roll=-Math.sin(t*Math.PI)*profile.bank;
-    fold.style.opacity=String(t>.93?(1-t)/.07:1);fold.style.transform=`translate3d(${pos.x-x0}px,${pos.y-y0}px,0) rotate(${angle}deg) rotateX(${roll}deg) scale(${scale})`;
+    flyer.style.opacity=String(Math.min(1,(elapsed-foldEnd)/100)*(t>.93?(1-t)/.07:1));flyer.style.transform=`translate3d(${pos.x-heartWidth/2}px,${pos.y-heartHeight/2}px,0) rotate(${angle}deg) rotateX(${roll}deg) scale(${scale})`;
     if(t>0){$('#flight-copy span').textContent='喜欢，已启航。';trail.push({x:pos.x,y:pos.y,time:now,scale});if(now-lastSpark>34){lastSpark=now;sparks.push({x:pos.x+(Math.random()-.5)*10,y:pos.y+(Math.random()-.5)*10,vx:(Math.random()-.5)*14,vy:14+Math.random()*18,born:now,life:500+Math.random()*350,size:Math.random()*1.6+.6,star:Math.random()>.65})}}
    }
    while(trail.length&&now-trail[0].time>1100)trail.shift();
@@ -247,44 +233,37 @@ if(typeof document!=='undefined'){
   }
   frame=requestAnimationFrame(draw);
  }
- function paperSheet(p,{contactShadow=false}={}){
-  const id='sheet'+uid++,stops=(name,tones)=>`<linearGradient id="${id}-${name}" x1=".15" y1="0" x2=".8" y2="1">${tones.map((tone,i)=>`<stop offset="${i/(tones.length-1)}" data-paper-tone="${tone}"/>`).join('')}</linearGradient>`;
-  const fills=['far','far','near','far','shade','shade','far','far','far','far'];
-  return `<svg class="choice-paper-svg folding-paper" data-paper-id="${id}" data-paper-model="connected-sheet" viewBox="0 0 180 160" aria-hidden="true"><defs>${stops('far',['white','light','main'])}${stops('near',['main','main','dark'])}${stops('shade',['main','dark'])}</defs>${contactShadow?'<ellipse class="paper-contact-shadow" cx="90" cy="135" rx="52" ry="5" fill="#385346" opacity=".08"/>':''}<g>${fills.map(fill=>`<polygon fill="url(#${id}-${fill})" stroke="white" stroke-opacity="0" stroke-width=".6" stroke-linejoin="round"/>`).join('')}</g><path class="sheet-edge" fill="none" stroke="${p.dark}" stroke-opacity=".23" stroke-width=".75" stroke-linejoin="round"/><path class="sheet-crease" fill="none" stroke="white" stroke-opacity=".85" stroke-width=".85" stroke-linejoin="round"/></svg>`;
+ // Preserve the approved source pixels; clip only the outer background and baked ground shadow.
+ function choiceMaterial(kind,index,{home=false}={}){
+  const papers=[
+   [1017,370,.6631578,'M1028.5 434.5 1098.75 383.75 1149.75 399.5 1184.25 444.5 1164.75 468.25 1116.75 465.5 1111.5 477.25Z'],
+   [1020,543,.684783,'M1034.25 591.25 1099.25 556.25 1163 576.25 1190 621.5 1126.75 643.5Z'],
+   [780,706,.6631578,'M790.75 762.25 847 719.5 922.25 736.5 949 805.25 881.5 797.5 873 804.5Z'],
+   [1014,704,.649485,'M1029.5 789.5 1086.25 714.25 1147 736.5 1189.75 777 1148.5 813.75Z']
+  ],region=kind==='paper'?papers[[0,0,1,1,2,3][index]]:index===2?[780,532,.65625,'M793.25 587 947.5 542 896.5 640.25 871.75 606.25 853.75 633.5 854 602.75Z']:[784,365,.6631578,'M795 417 949.75 376.25 894.25 472.75 871.5 440.75 853.5 466.25 853.5 435.5Z'],[x,y,scale,outline]=region,id='original-paper-'+uid++;
+  return `<svg class="choice-original-material" data-original-art="${kind}" viewBox="${home?'0 0 180 160':`${x} ${y} ${126/scale} ${75/scale}`}" aria-hidden="true"><defs><clipPath id="${id}"><path d="${outline}"/></clipPath></defs><g${home?' transform="translate(8 20) scale(1.04685) translate(-795 -376.25)"':''}><image href="${asset('choice-paper-sheet.png')}" width="1433" height="1098" clip-path="url(#${id})"/></g></svg>`;
  }
- function paintPaper(container,p,points,colourMix){
-  const center=points[10],mix=(a,b,t)=>{const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));return '#'+rgb(a).map((v,i)=>Math.round(v+(rgb(b)[i]-v)*t).toString(16).padStart(2,'0')).join('')};
-  const colours={white:'#ffffff',light:mix('#fafbf9',p.light,colourMix),main:mix('#d9dedb',p.main,colourMix),dark:mix('#a3afa8',p.dark,colourMix)};
-  container.querySelectorAll('[data-paper-tone]').forEach(stop=>stop.setAttribute('stop-color',colours[stop.getAttribute('data-paper-tone')]));
-  container.querySelectorAll('polygon').forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`)});
-  container.querySelector('.sheet-edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
-  container.querySelector('.sheet-crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
- }
- function choiceSheet(p){
-  const id='origami'+uid++,gradient=(name,colours)=>`<linearGradient id="${id}-${name}" x1="0" y1="0" x2=".72" y2="1">${colours.map((tone,i)=>`<stop offset="${i/(colours.length-1)}" data-choice-tone="${tone}"/>`).join('')}</linearGradient>`;
-  return `<svg class="choice-paper-svg" data-paper-id="${id}" data-paper-model="hinged-sheet" viewBox="0 0 180 160" aria-hidden="true"><defs>${gradient('far',['white','light','main'])}${gradient('near',['light','main','dark'])}${gradient('keel',['dark','deep'])}${gradient('return',['white','light'])}<filter id="${id}-crease" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.15"/></filter><filter id="${id}-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".82" numOctaves="2" seed="7" result="grain"/><feColorMatrix in="grain" type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feComposite in2="SourceGraphic" operator="in"/><feBlend in="SourceGraphic" mode="multiply"/></filter></defs><ellipse class="paper-contact-shadow" cx="90" cy="137" rx="48" ry="4" fill="#385346" opacity=".1"/><g filter="url(#${id}-grain)"><path data-choice-face="keel" fill="url(#${id}-keel)"/><path data-choice-face="return" fill="url(#${id}-return)"/><path data-choice-face="far" fill="url(#${id}-far)"/><path class="choice-fold-shadow" fill="#163d2c" opacity=".22" filter="url(#${id}-crease)"/><path data-choice-face="near" fill="url(#${id}-near)"/><path class="choice-paper-edge" fill="none" stroke="white" stroke-opacity=".8" stroke-width=".8" stroke-linejoin="round"/><path class="choice-fold-light" fill="none" stroke="white" stroke-opacity=".9" stroke-width=".85" stroke-linecap="round"/><path class="choice-fold-ink" fill="none" stroke="#1d553b" stroke-opacity=".2" stroke-width=".65"/></g></svg>`;
+ function paperSheet(p){
+  return `<svg class="choice-paper-svg" viewBox="0 0 180 160" aria-hidden="true"><g>${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".32" stroke-width=".7" stroke-linejoin="round"/>').join('')}</g><path class="sheet-edge" fill="none" stroke="${p.dark}" stroke-opacity=".15" stroke-width=".8"/><path class="sheet-crease" fill="none" stroke="white" stroke-opacity=".8" stroke-width="1"/><path class="sheet-tab" d="M118 36 111 57H139Z" fill="${p.light}" stroke="white" stroke-opacity=".7" stroke-width=".7"/></svg>`;
  }
  function drawChoiceSheet(button,p,value){
-  button.dataset.foldValue=String(value);
-  const pts=choicePaperGeometry(value),[nose,farRoot,nearRoot,keel,farWing,nearWing]=pts,mix=Math.min(1,value/1.1),blend=(gray,col)=>{const a=gray.match(/\w\w/g).map(n=>parseInt(n,16)),b=col.slice(1).match(/\w\w/g).map(n=>parseInt(n,16));return '#'+a.map((n,i)=>Math.round(n+(b[i]-n)*mix).toString(16).padStart(2,'0')).join('')},colours={white:'#ffffff',light:blend('f6f7f5',p.light),main:blend('d3d8d4',p.main),dark:blend('9fa9a2',p.dark),deep:blend('737f77',p.ink)};
-  button.querySelectorAll('[data-choice-tone]').forEach(stop=>stop.setAttribute('stop-color',colours[stop.dataset.choiceTone]));
-  const path=vertices=>'M'+vertices.map(v=>v.x.toFixed(3)+' '+v.y.toFixed(3)).join('L')+'Z',faces={keel:[farRoot,nose,keel],return:[keel,nearRoot,nearWing],far:[farWing,nose,farRoot],near:[nearRoot,nose,nearWing]};
-  for(const [name,vertices]of Object.entries(faces))button.querySelector(`[data-choice-face="${name}"]`).setAttribute('d',path(vertices));
-  button.querySelector('.choice-fold-shadow').setAttribute('d',path([farRoot,nose,{x:nearRoot.x+2,y:nearRoot.y+3},keel]));
-  button.querySelector('.choice-paper-edge').setAttribute('d',`M${farWing.x} ${farWing.y}L${nose.x} ${nose.y}L${nearWing.x} ${nearWing.y}`);
-  button.querySelector('.choice-fold-light').setAttribute('d',`M${farRoot.x} ${farRoot.y}L${nose.x} ${nose.y}L${nearRoot.x} ${nearRoot.y}`);
-  button.querySelector('.choice-fold-ink').setAttribute('d',`M${nearRoot.x+.6} ${nearRoot.y+.6}L${nose.x} ${nose.y}`);
+  button.dataset.foldValue=String(value);button.classList.toggle('show-plane',value>2.82);
+  const stage=1+Math.min(2,Math.floor(value)),t=value>=3?1:value%1,points=foldPaper(stage,t).map(v=>{const perspective=460/(460-v.z);return {x:90+(v.x-90)*perspective,y:80+(v.y-80)*perspective}}),center=points[10];
+  button.querySelectorAll('.choice-paper-svg polygon').forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`);face.setAttribute('fill',i<5?p.main:p.light);face.setAttribute('fill-opacity',String(i<5?.48+Math.min(1,value)*.52:1))});
+  button.querySelector('.sheet-edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
+  button.querySelector('.sheet-crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
+  button.querySelector('.sheet-tab').style.opacity=String(Math.max(0,1-value*3));
  }
  function updateChoiceCount(){$('#selected-count').textContent=state.selected.length;$('#release').disabled=state.selected.length===0}
  function animateChoice(button,p,pressed){
   cancelAnimationFrame(choiceFrames.get(button));button.setAttribute('aria-pressed',String(pressed));
   if(reduced()){button.classList.remove('is-folding');drawChoiceSheet(button,p,pressed?3:0);return}
-  const start=performance.now(),from=Number(button.dataset.foldValue),target=pressed?3:0,duration=Math.max(160,(pressed?640:460)*Math.abs(target-from)/3);button.classList.add('is-folding');
-  function draw(now){const t=Math.min(1,(now-start)/duration),value=from+(target-from)*t;drawChoiceSheet(button,p,value);if(t<1)choiceFrames.set(button,requestAnimationFrame(draw));else{button.classList.remove('is-folding');choiceFrames.delete(button)}}
+  const start=performance.now(),from=Number(button.dataset.foldValue),target=pressed?3:0,duration=Math.max(160,(pressed?540:420)*Math.abs(target-from)/3);button.classList.add('is-folding');
+  function draw(now){const t=Math.min(1,(now-start)/duration),value=from+(target-from)*t;drawChoiceSheet(button,p,value);button.classList.toggle('show-plane',value>2.82);if(t<1)choiceFrames.set(button,requestAnimationFrame(draw));else{button.classList.remove('is-folding');choiceFrames.delete(button)}}
   draw(start);
  }
  function renderChoices(){
-  theme(PALETTES[0]);$('#chosen-ad-count').textContent=state.votes.length;$('#choices').innerHTML=STANDARDS.map((label,i)=>{const p=standardPaper(i),pressed=state.selected.includes(i);return `<button class="choice" data-standard="${i}" aria-label="${label}" aria-pressed="${pressed}" style="--accent:${p.main};--dark:${p.ink}"><span class="choice-sheet">${choiceSheet(p)}</span><span class="choice-label">${label}</span></button>`}).join('');
+  theme(PALETTES[0]);$('#chosen-ad-count').textContent=state.votes.length;$('#choices').innerHTML=STANDARDS.map((label,i)=>{const p=standardPaper(i),pressed=state.selected.includes(i);return `<button class="choice" data-standard="${i}" aria-label="${label}" aria-pressed="${pressed}" style="--accent:${p.main};--dark:${p.ink};--air-hue:${[0,-112,0,53,122,-69][i]}deg"><span class="choice-paper-photo" aria-hidden="true">${choiceMaterial('paper',i)}</span><span class="choice-sheet">${paperSheet(p)}</span><span class="choice-aircraft"><span class="choice-plane-photo" aria-hidden="true">${choiceMaterial('plane',i)}</span></span><span class="choice-label">${label}</span></button>`}).join('');
   $$('.choice').forEach(button=>drawChoiceSheet(button,standardPaper(Number(button.dataset.standard)),button.getAttribute('aria-pressed')==='true'?3:0));updateChoiceCount();
  }
  // Use the browser's SVG arc length for both artwork placement and animation.
@@ -411,7 +390,7 @@ if(typeof document!=='undefined'){
  if(entryURL.searchParams.has('view')){entryURL.searchParams.delete('view');history.replaceState(null,'',entryURL)}
  const enterFromPreview=entryURL.searchParams.get('entry')==='vote';
  if(enterFromPreview){entryURL.searchParams.delete('entry');history.replaceState(null,'',entryURL)}
- show('cover');entryController=globalThis.FLIGHT_ENTRY?.mount($('#cover .entry-stage'));
+ show('cover');entryController=globalThis.FLIGHT_ENTRY?.mount($('#cover .entry-stage'),{planeArtwork:colour=>choiceMaterial('plane',0,{home:true}).replace('<svg ',`<svg style="filter:hue-rotate(${colour==='coral'?-112:colour==='lilac'?122:0}deg)" `)});
  if(enterFromPreview){entryController?.showHome();beginVoting()}
  else if(entryController)document.fonts.ready.then(()=>entryController.restart());
 }
