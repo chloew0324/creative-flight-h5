@@ -56,6 +56,18 @@ const CARD_COPY=[
 const STORE='creative-flight-2024-aligned-v2';
 // This is both the visible dashed line and the motion rail, from the lower clouds upward.
 const POSTER_ROUTE='M151 587C158 578 176 567.4 202 557C257 535 338 487.5 268 435C192 378 55 397 42 352C29 307 89 280 159 294C209 304 250 268 302 256';
+function posterLayout(height=780,count=3){
+ const h=Math.max(620,height),compact=Math.min(1,h/780),routeTop=256*compact,routeBottom=h-193;
+ const mapY=y=>routeTop+(y-256)*(routeBottom-routeTop)/331;
+ let coordinate=0;const path=POSTER_ROUTE.replace(/-?\d*\.?\d+/g,value=>String(Number((coordinate++%2?mapY(Number(value)):Number(value)).toFixed(3))));
+ const planeScale=Math.max(.74,Math.min(1,(h-260)/520)),poses=count>3?[
+  {end:.76,direction:1,w:137,lx:80,ly:220},{end:.98,direction:1,w:87,lx:274,ly:211},
+  {end:.61,direction:-1,w:82,lx:15,ly:419},{end:.30,direction:1,w:82,lx:266,ly:390},
+  {end:.065,direction:-1,w:82,lx:152,ly:510},{end:.46,direction:1,w:82,lx:130,ly:448}
+ ]:[{end:.76,direction:1,w:137,lx:80,ly:220},{end:.98,direction:1,w:87,lx:274,ly:211},{end:.23,direction:-1,w:91,lx:266,ly:552}];
+ return {height:h,headingY:97*compact,footerY:h-Math.max(45,Math.min(67,67+(h-780)*.12)),path,poses:poses.map(p=>({...p,w:p.w*planeScale,ly:mapY(p.ly)})),labelSize:(count>3?17:19)*Math.max(.9,planeScale)};
+}
+
 const POSTER_NOSE_ANGLE=Math.atan2(60,80)*180/Math.PI;
 // One connected sheet: heart, opened square, half-folded triangle, keel, open wings.
 const PAPER_STAGES=[
@@ -81,7 +93,7 @@ function voteFlightPath(_index,w,h,x,y){
  const origin={x,y:y-51};
  return {index:0,origin,control1:{x:x+w*.22,y:origin.y-45},control2:{x:w*.98,y:h*.40},destination:{x:w*1.17,y:h*.07},duration:2100,bank:10,pattern:0};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale,viewportLayout,AD_CARD_GAP,AD_ORBIT_RADIUS};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,posterLayout,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale,viewportLayout,AD_CARD_GAP,AD_ORBIT_RADIUS};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -303,20 +315,16 @@ if(typeof document!=='undefined'){
  function planeTransform(point,w,scale=1){
   return `translate(${point.x} ${point.y}) rotate(${point.rotation}) scale(${scale}) translate(${-w/2} ${-w*160/180/2})`;
  }
- function posterSVG(selected,{exported=false,fontData=null,routeId='poster-route'}={}){
-  const many=selected.length>3,route=document.createElementNS('http://www.w3.org/2000/svg','path');route.setAttribute('d',POSTER_ROUTE);
-  const length=route.getTotalLength(),poses=many?[
-   {end:.76,direction:1,w:137,lx:80,ly:220}, {end:.98,direction:1,w:87,lx:274,ly:211},
-   {end:.61,direction:-1,w:82,lx:15,ly:419}, {end:.30,direction:1,w:82,lx:266,ly:390},
-   {end:.065,direction:-1,w:82,lx:152,ly:510}, {end:.46,direction:1,w:82,lx:130,ly:448}
-  ]:[{end:.76,direction:1,w:137,lx:80,ly:220},{end:.98,direction:1,w:87,lx:274,ly:211},{end:.23,direction:-1,w:91,lx:266,ly:552}];
+ function posterSVG(selected,{exported=false,fontData=null,routeId='poster-route',height=780}={}){
+  const layout=posterLayout(height,selected.length),poses=layout.poses,route=document.createElementNS('http://www.w3.org/2000/svg','path');route.setAttribute('d',layout.path);
+  const length=route.getTotalLength();
   const fonts=fontData?`<style>@font-face{font-family:RefSans;src:url("${fontData.regular}") format("woff");font-weight:400}@font-face{font-family:RefSans;src:url("${fontData.bold}") format("woff");font-weight:600 900}@font-face{font-family:FlightHand;src:url("${fontData.hand}") format("woff");font-weight:400}</style>`:'';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 780" ${exported?'width="1170" height="2340"':''} font-family="RefSans,PingFang SC,sans-serif"><defs>${fonts}</defs><image href="${globalThis.FLIGHT_VISUALS.background}" width="390" height="780"/><g text-anchor="middle"><text x="195" y="97" font-size="34" font-weight="700" letter-spacing=".7" fill="#00b773">我的创意航线</text><text x="195" y="132" font-size="21" font-weight="700" fill="#00b773">腾讯十周年</text><text x="195" y="160" font-size="14" fill="#999e9c">谢谢你，让好创意飞得更远</text></g><path id="${routeId}" d="${POSTER_ROUTE}" fill="none" stroke="#bbc5c3" stroke-opacity=".85" stroke-width="1.15" stroke-dasharray="7 8" stroke-linecap="round"/>${selected.map((s,i)=>{const p=poses[i],distance=p.end*length,point=routeSample(route,distance,p.direction);return `<g class="poster-plane" data-width="${p.w}" data-route-end="${p.end}" data-route-distance="${distance}" data-direction="${p.direction}" transform="${planeTransform(point,p.w)}"><svg width="${p.w}" height="${p.w*160/180}" viewBox="0 0 180 160">${plane(standardPaper(s)).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</svg></g><text class="poster-label" x="0" y="0" transform="translate(${p.lx} ${p.ly}) rotate(-10) skewX(-6)" font-size="${many?17:19}" font-weight="700" fill="#006d4e">${STANDARDS[s]}</text>`}).join('')}<g transform="rotate(-3 195 710)"><text x="195" y="713" text-anchor="middle" font-family="FlightHand,HanziPen SC,cursive" font-size="24" fill="#007b59">十年，因你而更有创意</text><path d="M176 736Q242 714 300 724" fill="none" stroke="#00d386" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="poster-svg" viewBox="0 0 390 ${layout.height}" ${exported?'width="1170" height="2340"':''} font-family="RefSans,PingFang SC,sans-serif"><defs>${fonts}</defs><image class="poster-background" href="${globalThis.FLIGHT_VISUALS.background}" width="390" height="${layout.height}" preserveAspectRatio="xMidYMid slice"/><g class="poster-heading" text-anchor="middle" transform="translate(0 ${layout.headingY-97})"><text x="195" y="97" font-size="34" font-weight="700" letter-spacing=".7" fill="#00b773">我的创意航线</text><text x="195" y="132" font-size="21" font-weight="700" fill="#00b773">腾讯十周年</text><text x="195" y="160" font-size="14" fill="#999e9c">谢谢你，让好创意飞得更远</text></g><path id="${routeId}" d="${layout.path}" fill="none" stroke="#bbc5c3" stroke-opacity=".85" stroke-width="1.15" stroke-dasharray="7 8" stroke-linecap="round"/>${selected.map((s,i)=>{const p=poses[i],distance=p.end*length,point=routeSample(route,distance,p.direction);return `<g class="poster-plane" data-width="${p.w}" data-route-end="${p.end}" data-route-distance="${distance}" data-direction="${p.direction}" transform="${planeTransform(point,p.w)}"><svg width="${p.w}" height="${p.w*160/180}" viewBox="0 0 180 160">${plane(standardPaper(s)).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</svg></g><text class="poster-label" x="0" y="0" transform="translate(${p.lx} ${p.ly}) rotate(-10) skewX(-6)" font-size="${layout.labelSize}" font-weight="700" fill="#006d4e">${STANDARDS[s]}</text>`}).join('')}<g class="poster-signoff" transform="translate(0 ${layout.footerY-713}) rotate(-3 195 710)"><text x="195" y="713" text-anchor="middle" font-family="FlightHand,HanziPen SC,cursive" font-size="24" fill="#007b59">十年，因你而更有创意</text><path d="M176 736Q242 714 300 724" fill="none" stroke="#00d386" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
  }
  function flyPoster(){
   if(app.classList.contains('poster-flying'))return;
   if(reduced()){finishPoster();return;}
-  const route=$('#poster-route'),length=route.getTotalLength(),groups=[...$('#route-card').querySelectorAll('.poster-plane')],labels=[...$('#route-card').querySelectorAll('.poster-label')],start=performance.now(),button=$('#save');
+  const route=$('#poster-route'),groups=[...$('#route-card').querySelectorAll('.poster-plane')],labels=[...$('#route-card').querySelectorAll('.poster-label')],start=performance.now(),button=$('#save');
   app.classList.add('poster-flying');button.disabled=true;button.textContent='创意正在飞行…';
   const flights=groups.map((el,i)=>{
    const w=Number(el.dataset.width),end=Number(el.dataset.routeEnd),direction=Number(el.dataset.direction);
@@ -325,7 +333,7 @@ if(typeof document!=='undefined'){
    return {el,label:labels[i],w,end,from,direction,delay:i*160,duration:Math.max(1400,Math.abs(end-from)*4500)};
   });
   function draw(now){
-   let finished=true;
+   const length=route.getTotalLength();let finished=true;
    flights.forEach(f=>{
     const t=Math.max(0,Math.min(1,(now-start-f.delay)/f.duration));if(t<1)finished=false;
     // A gentle stop changes speed only; position and nose always come from the visible rail.
@@ -333,7 +341,7 @@ if(typeof document!=='undefined'){
     const distance=(f.from+(f.end-f.from)*progress)*length,point=routeSample(route,distance,f.direction);
     f.el.style.opacity=String(Math.min(1,t*9));
     f.el.dataset.routeDistance=String(distance);
-    f.el.setAttribute('transform',planeTransform(point,f.w,.72+.28*progress));
+    const scale=.72+.28*progress;f.el.dataset.routeScale=String(scale);f.el.setAttribute('transform',planeTransform(point,Number(f.el.dataset.width),scale));
     f.label.style.opacity=String(Math.max(0,(t-.84)/.16));
    });
    if(!finished)journeyFrame=requestAnimationFrame(draw);
@@ -344,7 +352,23 @@ if(typeof document!=='undefined'){
  function finishPoster(){
   app.classList.remove('poster-flying');const button=$('#save');button.disabled=false;button.innerHTML='挑选我的创意卡片 <span>→</span>';announce('纸飞机已沿航线抵达，点击按钮挑选你的创意卡片。');
  }
- function renderResult(){theme(PALETTES[0]);$('#route-card').innerHTML=posterSVG(state.selected);$('#route-card').setAttribute('aria-label','我的创意航线：'+state.selected.map(i=>STANDARDS[i]).join('、'))}
+ function posterHeight(){return document.documentElement.classList.contains('viewport-fill')?parseFloat(app.style.getPropertyValue('--layout-main'))*390/402:780}
+ function renderResult(){
+  theme(PALETTES[0]);const height=posterHeight();$('#route-card').innerHTML=posterSVG(state.selected,{height});$('#result').style.setProperty('--route-scene-height',posterLayout(height).height*402/390+'px');
+  $('#route-card').setAttribute('aria-label','我的创意航线：'+state.selected.map(i=>STANDARDS[i]).join('、'));
+ }
+ function resizePoster(){
+  const svg=$('#route-card > svg');if(!svg)return;const layout=posterLayout(posterHeight(),state.selected.length);
+  $('#result').style.setProperty('--route-scene-height',layout.height*402/390+'px');
+  if(Math.abs(Number(svg.getAttribute('viewBox').split(' ')[3])-layout.height)<.01)return;
+  const route=$('#poster-route'),oldLength=route.getTotalLength(),groups=[...svg.querySelectorAll('.poster-plane')],progress=groups.map(el=>Number(el.dataset.routeDistance)/oldLength);
+  svg.setAttribute('viewBox','0 0 390 '+layout.height);svg.querySelector('.poster-background').setAttribute('height',layout.height);
+  svg.querySelector('.poster-heading').setAttribute('transform',`translate(0 ${layout.headingY-97})`);svg.querySelector('.poster-signoff').setAttribute('transform',`translate(0 ${layout.footerY-713}) rotate(-3 195 710)`);
+  route.setAttribute('d',layout.path);const length=route.getTotalLength();
+  groups.forEach((el,i)=>{const p=layout.poses[i],distance=progress[i]*length,aircraft=el.querySelector('svg');el.dataset.width=String(p.w);el.dataset.routeDistance=String(distance);aircraft.setAttribute('width',p.w);aircraft.setAttribute('height',p.w*160/180);el.setAttribute('transform',planeTransform(routeSample(route,distance,p.direction),p.w,Number(el.dataset.routeScale)||1))});
+  svg.querySelectorAll('.poster-label').forEach((el,i)=>{const p=layout.poses[i];el.setAttribute('transform',`translate(${p.lx} ${p.ly}) rotate(-10) skewX(-6)`);el.setAttribute('font-size',layout.labelSize)});
+ }
+
  function completeJourney(){
   if(view!=='result')return;show('cards');
   globalThis.FLIGHT_ENDING?.openPacket({onDone:()=>announce('左右滑动，挑选你的创意卡片。')});
@@ -418,7 +442,7 @@ if(typeof document!=='undefined'){
   const viewport=window.visualViewport,width=viewport?.width||window.innerWidth,height=viewport?.height||window.innerHeight,root=document.documentElement,style=getComputedStyle(root),insets=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,parseFloat(style.getPropertyValue('--safe-'+side))||0]));
   const layout=viewportLayout(width,height,insets,root.classList.contains('native-wechat'),matchMedia('(max-width:599px), (hover:none) and (pointer:coarse)').matches);
   root.classList.toggle('viewport-fill',layout.mobile);root.style.setProperty('--viewport-height',height+'px');
-  app.style.setProperty('--preview-scale',String(layout.scale));app.style.setProperty('--reference-height',layout.height+'px');app.style.setProperty('--layout-main',layout.main+'px');app.style.setProperty('--composition-scale',String(layout.composition));
+  app.style.setProperty('--preview-scale',String(layout.scale));app.style.setProperty('--reference-height',layout.height+'px');app.style.setProperty('--layout-main',layout.main+'px');app.style.setProperty('--composition-scale',String(layout.composition));if(view==='result')resizePoster();
  }
  window.addEventListener('resize',fitPreview);window.visualViewport?.addEventListener('resize',fitPreview);fitPreview();
  const entryURL=new URL(location.href);

@@ -44,3 +44,8 @@
 .phone #cover,.phone #cards{touch-action:none;-webkit-user-select:none;user-select:none}
 .phone #cover img,.phone #cards img{-webkit-user-drag:none}
 @media(max-width:459px){body{padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)}.phone{border-radius:0}}
+
+/* The route is a responsive scene, not a fixed poster inside the mobile frame. */
+.viewport-fill .phone > main > #result { top:0;left:0;width:100%;height:var(--layout-main);min-height:0;transform:none;aspect-ratio:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none; }
+.viewport-fill .phone .result .route-card { inset:0 auto auto 0;width:100%;height:var(--route-scene-height,var(--layout-main)); }
+.viewport-fill .phone .result .result-bottom { top:calc(var(--route-scene-height,var(--layout-main)) - 169px);bottom:auto; }

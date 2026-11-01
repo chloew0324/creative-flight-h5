@@ -46,3 +46,23 @@ for(let i=2;i<coordinates.length;i+=6){
  lastTangent=cubicTangent(previous,control1,control2,end,1);previous=end;
 }
 console.log('PASS: the shared gray S route has no stationary tangent or corner at any cubic join.');
+
+const {posterLayout}=require('./app.js');
+assert.deepEqual(posterLayout(780).path.match(/-?\d+(?:\.\d+)?/g).map(Number),coordinates,'Canonical exported artwork keeps its original route');
+for(const h of [620,642,690,752,795,877])for(const count of [1,3,6]){
+ const layout=posterLayout(h,count),xy=layout.path.match(/-?\d+(?:\.\d+)?/g).map(Number);
+ assert.equal(layout.height,h);assert.ok(layout.poses.every(p=>p.w>=60&&p.w<=137&&p.ly>layout.headingY+70&&p.ly<h-169));
+ assert.ok(layout.footerY>h-100&&layout.footerY<h-30);
+ let start={x:xy[0],y:xy[1]},tangent=null;
+ for(let i=2;i<xy.length;i+=6){
+  const b={x:xy[i],y:xy[i+1]},c={x:xy[i+2],y:xy[i+3]},d={x:xy[i+4],y:xy[i+5]},next=cubicTangent(start,b,c,d,0);
+  if(tangent){const cross=tangent.x*next.y-tangent.y*next.x;assert.ok(Math.abs(cross)/(Math.hypot(tangent.x,tangent.y)*Math.hypot(next.x,next.y))<.0001)}
+  for(let j=0;j<=100;j++)assert.ok(Math.hypot(...Object.values(cubicTangent(start,b,c,d,j/100)))>1);
+  tangent=cubicTangent(start,b,c,d,1);start=d;
+ }
+}
+const fs=require('node:fs'),routeSource=fs.readFileSync('app.js','utf8'),resize=routeSource.slice(routeSource.indexOf(' function resizePoster('),routeSource.indexOf(' function completeJourney('));
+assert.ok(!resize.includes('innerHTML'),'Resize updates the same aircraft and visible rail nodes');
+assert.match(routeSource,/class="poster-background"[^>]+preserveAspectRatio="xMidYMid slice"/);
+assert.match(fs.readFileSync('integration.css','utf8'),/#result \{[^}]*width:100%;height:var\(--layout-main\);min-height:0;transform:none/);
+console.log('PASS: responsive route fills its own scene, curves stay smooth at six heights, aircraft keep proportions and node identity on resize; canonical PNG route stays unchanged.');
