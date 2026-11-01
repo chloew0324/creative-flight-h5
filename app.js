@@ -55,11 +55,19 @@ const PAPER_STAGES=[
  [[90,8],[118,36],[139,57],[160,78],[125,113],[90,148],[55,113],[20,78],[48,50],[69,29],[90,78]],
  [[90,8],[62,36],[41,57],[20,78],[55,113],[90,148],[55,113],[20,78],[48,50],[69,29],[90,78]],
  [[166,20],[166,20],[104,61],[73,78],[84,105],[103,113],[84,105],[73,78],[104,61],[166,20],[93,80]],
- [[170,20],[170,20],[170,20],[103,117],[72,106],[86,75],[76,76],[8,43],[89,31.5],[170,20],[86,75]]
+ [[170,20],[170,20],[170,20],[103,117],[72,106],[76,76],[76,76],[8,43],[89,31.5],[170,20],[86,75]]
 ];
 function foldPaper(stage,t){
  const from=PAPER_STAGES[stage],to=PAPER_STAGES[stage+1],ease=t*t*(3-2*t);
  return from.map((a,i)=>{const b=to[i],moving=Math.hypot(b[0]-a[0],b[1]-a[1]);return {x:a[0]+(b[0]-a[0])*ease,y:a[1]+(b[1]-a[1])*ease,z:Math.sin(t*Math.PI)*Math.min(48,moving*.5)*(i===10?0:(stage===1&&i>4?0:1))}});
+}
+function projectPaper(nodes,tilt=0,relief=0){
+ const angle=tilt*Math.PI/180;
+ return nodes.map((point,i)=>{const y=point.y-80,z=point.z+(i===10?relief:0),ry=y*Math.cos(angle)-z*Math.sin(angle),rz=y*Math.sin(angle)+z*Math.cos(angle),perspective=520/(520-rz);return {x:90+(point.x-90)*perspective,y:80+ry*perspective}});
+}
+function choicePaperGeometry(value){
+ const v=Math.max(0,Math.min(3,value)),stage=1+Math.min(2,Math.floor(v)),t=v===3?1:v%1;
+ return projectPaper(foldPaper(stage,t),52*(1-v/3),12*(1-v/3));
 }
 function normalizeState(raw){
  const selected=[...new Set(Array.isArray(raw?.selected)?raw.selected.filter(i=>Number.isInteger(i)&&i>=0&&i<STANDARDS.length):[])];
@@ -69,11 +77,11 @@ function toggleStandard(selected,id){if(!Number.isInteger(id)||id<0||id>=STANDAR
 function castVote(state){if(state.locked)return state;const id=ADS[state.index]?.id;return id&&!state.votes.includes(id)?{...state,votes:[...state.votes,id]}:state}
 function cubic(a,b,c,d,t){const u=1-t;return {x:u*u*u*a.x+3*u*u*t*b.x+3*u*t*t*c.x+t*t*t*d.x,y:u*u*u*a.y+3*u*u*t*b.y+3*u*t*t*c.y+t*t*t*d.y}}
 function cubicTangent(a,b,c,d,t){const u=1-t;return {x:3*u*u*(b.x-a.x)+6*u*t*(c.x-b.x)+3*t*t*(d.x-c.x),y:3*u*u*(b.y-a.y)+6*u*t*(c.y-b.y)+3*t*t*(d.y-c.y)}}
-function voteFlightPath(index,w,h,x,y){
- const i=((index%6)+6)%6,origin={x,y:y-51};
- return {index:i,origin,control1:{x:x+w*[.22,.13,.27,.18,.09,.24][i],y:origin.y-[45,85,36,68,60,52][i]},control2:{x:w*[.98,.98,.91,.96,.98,.94][i],y:h*[.40,.34,.46,.37,.41,.31][i]},destination:{x:w*1.17,y:h*[.07,.10,.04,.13,.05,.09][i]},duration:[2100,2250,2050,2300,2200,2150][i],bank:[10,13,9,11,14,12][i],pattern:i%3};
+function voteFlightPath(_index,w,h,x,y){
+ const origin={x,y:y-51};
+ return {index:0,origin,control1:{x:x+w*.22,y:origin.y-45},control2:{x:w*.98,y:h*.40},destination:{x:w*1.17,y:h*.07},duration:2100,bank:10,pattern:0};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,projectPaper,choicePaperGeometry,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -174,16 +182,14 @@ if(typeof document!=='undefined'){
  function launchFlight(){
   if(busy||view!=='vote')return;
   if(reduced()){renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票。');toast('喜欢，已启航。');return}
-  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),flyer=$('#flying-plane'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d'),button=$('#vote-button');
-  const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,heartRect=(button.hidden?$('.voted-icon'):button).getBoundingClientRect(),coordinateScale=w/bounds.width,heartWidth=heartRect.width*coordinateScale||164,heartHeight=heartRect.height*coordinateScale||146,x0=heartRect.width?(heartRect.x-bounds.x)*coordinateScale+heartWidth/2:(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=heartRect.height?(heartRect.y-bounds.y)*coordinateScale-top+heartHeight/2:(launch.y-bounds.y+launch.height/2)*coordinateScale-top-9;
+  busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d');
+  const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,coordinateScale=w/bounds.width,heartWidth=120,heartHeight=110,x0=(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=(launch.y-bounds.y+launch.height/2)*coordinateScale-top;
   const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   fold.style.width=heartWidth+'px';fold.style.height=heartHeight+'px';fold.style.left=x0-heartWidth/2+'px';fold.style.top=y0-heartHeight/2+'px';fold.style.opacity='1';fold.style.transform='none';
-  fold.innerHTML=`<svg class="folding-paper" viewBox="0 0 180 160" aria-hidden="true"><g>${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".24" stroke-width=".55" stroke-linejoin="round"/>').join('')}</g><path class="paper-outline" fill="none" stroke="white" stroke-opacity=".68" stroke-width=".7" stroke-linejoin="round"/><path class="paper-crease" fill="none" stroke="${p.ink}" stroke-opacity=".22" stroke-width=".7"/></svg>`;
-  const faces=[...fold.querySelectorAll('polygon')],outline=fold.querySelector('.paper-outline'),crease=fold.querySelector('.paper-crease');
-  flyer.style.width=heartWidth+'px';flyer.style.height=heartHeight+'px';flyer.innerHTML=plane(p);flyer.style.opacity='0';$('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
+  fold.innerHTML=paperSheet(p);$('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
   overlay.hidden=false;overlay.classList.remove('flight-running');void overlay.offsetWidth;overlay.classList.add('flight-running');$('#vote').classList.add('flying');renderVote();
   const profile=voteFlightPath(state.index,w,h,x0,y0),{origin,control1,control2,destination}=profile;overlay.dataset.flightVariant=String(profile.index);canvas.dataset.effect=['paper-petals','prism-glints','wind-orbits'][profile.pattern];
-  const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration;let lastSpark=0;
+  const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration;let lastSpark=0,planeReady=false;
   function pointAt(t){return cubic(origin,control1,control2,destination,t)}
   function drawAtmosphere(elapsed){
    const pulse=Math.max(0,Math.min(1,(elapsed-180)/1000)),fade=Math.max(0,1-(elapsed-1550)/1500);
@@ -201,21 +207,19 @@ if(typeof document!=='undefined'){
   }
   function drawPaper(elapsed){
    let stage=0,t=0;for(let i=0;i<steps.length;i++)if(elapsed>=steps[i].at){stage=i;t=Math.min(1,(elapsed-steps[i].at)/steps[i].duration)}
-   const nodes=foldPaper(stage,t),angle=(stage===2?Math.sin(t*Math.PI)*.14:0),project=point=>{const x=point.x-90,z=point.z,rx=x*Math.cos(angle)-z*Math.sin(angle),rz=x*Math.sin(angle)+z*Math.cos(angle),perspective=460/(460-rz);return {x:90+rx*perspective,y:80+(point.y-80)*perspective}},points=nodes.map(project),center=points[10];
-   const heartShades=[p.main,p.main,p.main,p.dark,p.main,p.main,p.main,p.light,p.light,p.main],planeShades=[p.main,p.main,p.main,p.light,p.dark,p.dark,p.light,p.light,p.light,p.light];
-   faces.forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`);face.setAttribute('fill',stage===0&&t<.35?heartShades[i]:stage>=2?planeShades[i]:i<5?p.main:p.light);face.setAttribute('fill-opacity',stage===0&&t<.35?(i===3?'.6':'1'):'1')});
-   outline.setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');crease.setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
+   paintPaper(fold,p,projectPaper(foldPaper(stage,t)),1);
    const lift=Math.min(1,elapsed/750),scale=1+Math.min(1,elapsed/750)*.15;
-   fold.style.transform=`translateY(${-51*lift}px) rotateX(${Math.sin(elapsed/900)*3}deg) scale(${scale})`;fold.style.opacity=String(elapsed>foldEnd?Math.max(0,1-(elapsed-foldEnd)/100):1);
+   fold.style.transform=`translate3d(0,${-51*lift}px,0) scale(${scale})`;fold.style.opacity='1';
   }
   function draw(now){
    const elapsed=now-start;ctx.clearRect(0,0,w,h);drawAtmosphere(elapsed);
-   if(elapsed<takeoffAt)drawPaper(elapsed);
+   if(elapsed<foldEnd)drawPaper(elapsed);
    if(elapsed>=foldEnd){
+    if(!planeReady){drawPaper(foldEnd);planeReady=true}
     const t=Math.max(0,Math.min(1,(elapsed-takeoffAt)/flightDuration)),pos=t>0?pointAt(t):origin,tangent=cubicTangent(origin,control1,control2,destination,t);
     const angle=(Math.atan2(tangent.y,tangent.x)*180/Math.PI+POSTER_NOSE_ANGLE)*Math.min(1,(elapsed-foldEnd)/120);
     const scale=t===0?1.15:1.15+Math.sin(Math.min(1,t/.4)*Math.PI)*.10-t*.79,roll=-Math.sin(t*Math.PI)*profile.bank;
-    flyer.style.opacity=String(Math.min(1,(elapsed-foldEnd)/100)*(t>.93?(1-t)/.07:1));flyer.style.transform=`translate3d(${pos.x-heartWidth/2}px,${pos.y-heartHeight/2}px,0) rotate(${angle}deg) rotateX(${roll}deg) scale(${scale})`;
+    fold.style.opacity=String(t>.93?(1-t)/.07:1);fold.style.transform=`translate3d(${pos.x-x0}px,${pos.y-y0}px,0) rotate(${angle}deg) rotateX(${roll}deg) scale(${scale})`;
     if(t>0){$('#flight-copy span').textContent='喜欢，已启航。';trail.push({x:pos.x,y:pos.y,time:now,scale});if(now-lastSpark>34){lastSpark=now;sparks.push({x:pos.x+(Math.random()-.5)*10,y:pos.y+(Math.random()-.5)*10,vx:(Math.random()-.5)*14,vy:14+Math.random()*18,born:now,life:500+Math.random()*350,size:Math.random()*1.6+.6,star:Math.random()>.65})}}
    }
    while(trail.length&&now-trail[0].time>1100)trail.shift();
@@ -233,27 +237,32 @@ if(typeof document!=='undefined'){
   }
   frame=requestAnimationFrame(draw);
  }
- function paperSheet(p){
-  return `<svg class="choice-paper-svg" viewBox="0 0 180 160" aria-hidden="true"><g>${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".32" stroke-width=".7" stroke-linejoin="round"/>').join('')}</g><path class="sheet-edge" fill="none" stroke="${p.dark}" stroke-opacity=".15" stroke-width=".8"/><path class="sheet-crease" fill="none" stroke="white" stroke-opacity=".8" stroke-width="1"/><path class="sheet-tab" d="M118 36 111 57H139Z" fill="${p.light}" stroke="white" stroke-opacity=".7" stroke-width=".7"/></svg>`;
+ function paperSheet(p,{contactShadow=false}={}){
+  const id='sheet'+uid++,stops=(name,tones)=>`<linearGradient id="${id}-${name}" x1=".15" y1="0" x2=".8" y2="1">${tones.map((tone,i)=>`<stop offset="${i/(tones.length-1)}" data-paper-tone="${tone}"/>`).join('')}</linearGradient>`;
+  const fills=['far','far','near','far','shade','shade','far','far','far','far'];
+  return `<svg class="choice-paper-svg folding-paper" data-paper-id="${id}" data-paper-model="connected-sheet" viewBox="0 0 180 160" aria-hidden="true"><defs>${stops('far',['white','light','main'])}${stops('near',['main','main','dark'])}${stops('shade',['main','dark'])}</defs>${contactShadow?'<ellipse class="paper-contact-shadow" cx="90" cy="135" rx="52" ry="5" fill="#385346" opacity=".08"/>':''}<g>${fills.map(fill=>`<polygon fill="url(#${id}-${fill})" stroke="white" stroke-opacity="0" stroke-width=".6" stroke-linejoin="round"/>`).join('')}</g><path class="sheet-edge" fill="none" stroke="${p.dark}" stroke-opacity=".23" stroke-width=".75" stroke-linejoin="round"/><path class="sheet-crease" fill="none" stroke="white" stroke-opacity=".85" stroke-width=".85" stroke-linejoin="round"/></svg>`;
+ }
+ function paintPaper(container,p,points,colourMix){
+  const center=points[10],mix=(a,b,t)=>{const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));return '#'+rgb(a).map((v,i)=>Math.round(v+(rgb(b)[i]-v)*t).toString(16).padStart(2,'0')).join('')};
+  const colours={white:'#ffffff',light:mix('#fafbf9',p.light,colourMix),main:mix('#d9dedb',p.main,colourMix),dark:mix('#a3afa8',p.dark,colourMix)};
+  container.querySelectorAll('[data-paper-tone]').forEach(stop=>stop.setAttribute('stop-color',colours[stop.getAttribute('data-paper-tone')]));
+  container.querySelectorAll('polygon').forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`)});
+  container.querySelector('.sheet-edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
+  container.querySelector('.sheet-crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
  }
  function drawChoiceSheet(button,p,value){
-  button.dataset.foldValue=String(value);button.classList.toggle('show-plane',value>2.82);
-  const stage=1+Math.min(2,Math.floor(value)),t=value>=3?1:value%1,points=foldPaper(stage,t).map(v=>{const perspective=460/(460-v.z);return {x:90+(v.x-90)*perspective,y:80+(v.y-80)*perspective}}),center=points[10];
-  button.querySelectorAll('.choice-paper-svg polygon').forEach((face,i)=>{const a=points[i],b=points[(i+1)%10];face.setAttribute('points',`${center.x},${center.y} ${a.x},${a.y} ${b.x},${b.y}`);face.setAttribute('fill',i<5?p.main:p.light);face.setAttribute('fill-opacity',String(i<5?.48+Math.min(1,value)*.52:1))});
-  button.querySelector('.sheet-edge').setAttribute('d',points.slice(0,10).map((v,i)=>(i?'L':'M')+v.x+' '+v.y).join('')+'Z');
-  button.querySelector('.sheet-crease').setAttribute('d',`M${points[0].x} ${points[0].y}L${center.x} ${center.y}L${points[5].x} ${points[5].y}M${points[3].x} ${points[3].y}L${center.x} ${center.y}L${points[7].x} ${points[7].y}`);
-  button.querySelector('.sheet-tab').style.opacity=String(Math.max(0,1-value*3));
+  button.dataset.foldValue=String(value);paintPaper(button,p,choicePaperGeometry(value),Math.min(1,value));
  }
  function updateChoiceCount(){$('#selected-count').textContent=state.selected.length;$('#release').disabled=state.selected.length===0}
  function animateChoice(button,p,pressed){
   cancelAnimationFrame(choiceFrames.get(button));button.setAttribute('aria-pressed',String(pressed));
   if(reduced()){button.classList.remove('is-folding');drawChoiceSheet(button,p,pressed?3:0);return}
   const start=performance.now(),from=Number(button.dataset.foldValue),target=pressed?3:0,duration=Math.max(160,(pressed?540:420)*Math.abs(target-from)/3);button.classList.add('is-folding');
-  function draw(now){const t=Math.min(1,(now-start)/duration),value=from+(target-from)*t;drawChoiceSheet(button,p,value);button.classList.toggle('show-plane',value>2.82);if(t<1)choiceFrames.set(button,requestAnimationFrame(draw));else{button.classList.remove('is-folding');choiceFrames.delete(button)}}
+  function draw(now){const t=Math.min(1,(now-start)/duration),value=from+(target-from)*t;drawChoiceSheet(button,p,value);if(t<1)choiceFrames.set(button,requestAnimationFrame(draw));else{button.classList.remove('is-folding');choiceFrames.delete(button)}}
   draw(start);
  }
  function renderChoices(){
-  theme(PALETTES[0]);$('#chosen-ad-count').textContent=state.votes.length;$('#choices').innerHTML=STANDARDS.map((label,i)=>{const p=standardPaper(i),pressed=state.selected.includes(i),paperCrop=[[1017,370,.6631578],[1017,370,.6631578],[1020,543,.684783],[1020,543,.684783],[780,706,.6631578],[1014,704,.649485]][i],airCrop=i===2?[780,532,.65625]:[784,365,.6631578];return `<button class="choice" data-standard="${i}" aria-label="${label}" aria-pressed="${pressed}" style="--accent:${p.main};--dark:${p.ink};--paper-x:${paperCrop[0]};--paper-y:${paperCrop[1]};--paper-scale:${paperCrop[2]};--air-x:${airCrop[0]};--air-y:${airCrop[1]};--air-scale:${airCrop[2]};--air-hue:${[0,-112,0,53,122,-69][i]}deg"><span class="choice-paper-photo" aria-hidden="true"></span><span class="choice-index" aria-hidden="true">${String(i+1).padStart(2,'0')}</span><span class="choice-sheet">${paperSheet(p)}</span><span class="choice-aircraft"><span class="choice-plane-photo" aria-hidden="true"></span></span><span class="choice-label">${label}</span></button>`}).join('');
+  theme(PALETTES[0]);$('#chosen-ad-count').textContent=state.votes.length;$('#choices').innerHTML=STANDARDS.map((label,i)=>{const p=standardPaper(i),pressed=state.selected.includes(i);return `<button class="choice" data-standard="${i}" aria-label="${label}" aria-pressed="${pressed}" style="--accent:${p.main};--dark:${p.ink}"><span class="choice-sheet">${paperSheet(p,{contactShadow:true})}</span><span class="choice-label">${label}</span></button>`}).join('');
   $$('.choice').forEach(button=>drawChoiceSheet(button,standardPaper(Number(button.dataset.standard)),button.getAttribute('aria-pressed')==='true'?3:0));updateChoiceCount();
  }
  // Use the browser's SVG arc length for both artwork placement and animation.

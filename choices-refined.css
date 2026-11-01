@@ -115,67 +115,32 @@
 .phone #choose .choice[aria-pressed="true"] .choice-label { color: #293c32; }
 .phone #choose .choice .choice-label > span { display: inline; }
 .phone #choose .choice-sheet {
-  position: absolute;
-  inset: -14px auto auto 18px;
-  display: block;
-  width: 114px;
-  height: 101.333333px;
-  opacity: 1;
-  filter: grayscale(1) drop-shadow(0 4px 4px #46604d15);
-  transform: none;
-  pointer-events: none;
-  transition: opacity .14s ease, filter .2s ease;
+  position:absolute;
+  inset:-22px auto auto 5px;
+  display:block;
+  width:140px;
+  height:124.444444px;
+  opacity:1;
+  filter:none;
+  transform:none;
+  pointer-events:none;
 }
-.phone #choose .choice-aircraft {
-  position: absolute;
-  inset: -15px auto auto 12px;
-  display: block;
-  width: 126px;
-  height: 112px;
-  opacity: 0;
-  filter: drop-shadow(0 5px 4px #38634b1c);
-  transform: none;
-  pointer-events: none;
-  transition: opacity .14s ease;
+.phone #choose .choice[aria-pressed="true"] .choice-sheet,
+.phone #choose .choice.is-folding .choice-sheet { opacity:1; }
+.phone #choose .choice-sheet > svg {
+  position:static;
+  inset:auto;
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:none;
+  overflow:visible;
+  opacity:1;
+  transform:none;
+  filter:drop-shadow(0 3px 3px #355a451c);
 }
-/* Reset the old flattened rule on both the outer SVG and its nested image viewport. */
-.phone #choose .choice-sheet > svg,
-.phone #choose .choice-aircraft > svg {
-  position: static;
-  inset: auto;
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  overflow: visible;
-  opacity: 1;
-  filter: none;
-  transform: none;
-  transform-origin: 50% 50%;
-}
-.phone #choose .choice-aircraft > svg > svg {
-  position: static;
-  inset: auto;
-  display: initial;
-  width: 162px;
-  height: 113px;
-  max-width: none;
-  overflow: visible;
-  opacity: 1;
-  filter: none;
-  transform: none;
-  transform-origin: 0 0;
-}
-.phone #choose .choice[aria-pressed="true"] .choice-sheet { opacity: 0; }
-.phone #choose .choice[aria-pressed="true"] .choice-aircraft { opacity: 1; }
-.phone #choose .choice.is-folding .choice-sheet {
-  opacity: 1;
-  filter: drop-shadow(0 4px 4px #38634b1c);
-}
-.phone #choose .choice.is-folding .choice-aircraft { opacity: 0; }
-.phone #choose .choice.is-folding.show-plane .choice-sheet { opacity: 0; }
-.phone #choose .choice.is-folding.show-plane .choice-aircraft { opacity: 1; }
-.phone #choose .choices.at-limit .choice { opacity: 1; }
+.phone #choose .paper-contact-shadow { filter:blur(3px); }
+.phone #choose .choices.at-limit .choice { opacity:1; }
 .phone #choose .choice:focus-visible {
   outline: 2px solid #00b77a;
   outline-offset: 5px;
@@ -212,20 +177,6 @@
 @media (prefers-reduced-motion: reduce) {
   .phone #choose .choice,
   .phone #choose .choice-sheet,
-  .phone #choose .choice-aircraft,
   .phone #choose .choice-label { transition: none; animation: none; }
 }
 
-/* Use the approved paper material at rest; the connected mesh remains visible during folding. */
-:root{--choice-paper-art:url('assets/choice-paper-sheet.png')}
-.phone #choose .choice-paper-photo,.phone #choose .choice-plane-photo{position:absolute;left:12px;top:0;width:126px;height:83px;background-image:var(--choice-paper-art);background-repeat:no-repeat;pointer-events:none;transition:opacity .09s;z-index:2}
-.phone #choose .choice-paper-photo{background-size:calc(1433px * var(--paper-scale)) calc(1098px * var(--paper-scale));background-position:calc(var(--paper-x) * var(--paper-scale) * -1px) calc(var(--paper-y) * var(--paper-scale) * -1px);filter:grayscale(1);opacity:1}
-.phone #choose .choice-plane-photo{left:0;background-size:calc(1433px * var(--air-scale)) calc(1098px * var(--air-scale));background-position:calc(var(--air-x) * var(--air-scale) * -1px) calc(var(--air-y) * var(--air-scale) * -1px);filter:hue-rotate(var(--air-hue))}
-.phone #choose .choice-sheet{opacity:0}
-.phone #choose .choice-aircraft{top:0;filter:none}
-.phone #choose .choice-aircraft>svg{opacity:0}
-.phone #choose .choice[aria-pressed=true] .choice-paper-photo,.phone #choose .choice.is-folding .choice-paper-photo{opacity:0}
-.phone #choose .choice.is-folding .choice-sheet{opacity:1}
-.phone #choose .choice.is-folding.show-plane .choice-sheet{opacity:0}
-
-.phone #choose .choice-paper-photo,.phone #choose .choice-plane-photo{height:75px}

@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('app.js','utf8'),css=fs.readFileSync('choices-refined.css','utf8');
+const template=source.slice(source.indexOf(' function paperSheet('),source.indexOf(' function paintPaper('));
+const context={uid:0,p:{main:'#58c99b',light:'#c4f2da',dark:'#319c75'}};
+vm.createContext(context);vm.runInContext(template+'result=paperSheet(p,{contactShadow:true});',context);
+assert.equal((context.result.match(/<polygon\b/g)||[]).length,10);
+assert.match(context.result,/data-paper-model="connected-sheet"/);
+assert.equal((context.result.match(/<linearGradient\b/g)||[]).length,3);
+assert.doesNotMatch(context.result,/<image\b|<img\b|\.png|\.jpg/);
+assert.doesNotMatch(css,/choice-paper-sheet\.png|background-size|--paper-x|--air-x|hue-rotate/);
+const choices=source.slice(source.indexOf(' function renderChoices('),source.indexOf(' // Use the browser'));
+assert.doesNotMatch(choices,/paperCrop|airCrop|choice-paper-photo|choice-plane-photo|choice-aircraft/);
+const voting=source.slice(source.indexOf(' function launchFlight('),source.indexOf(' function paperSheet('));
+assert.doesNotMatch(voting,/flyer|plane\(p\)|heartRect/,'Voting must not swap a folded vector sheet for a raster aircraft or measure a hovering button');
+assert.match(voting,/fold\.innerHTML=paperSheet\(p\)/);
+assert.match(voting,/fold\.style\.transform=`translate3d\(\$\{pos\.x-x0\}/);
+console.log('PASS: choice papers contain ten live vector faces and no screenshot crops; voting folds and flies the same sheet without a bitmap swap or hover-dependent origin.');
