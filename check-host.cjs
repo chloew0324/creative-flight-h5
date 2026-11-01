@@ -30,3 +30,15 @@ const finishButton={disabled:true,innerHTML:''};
 vm.createContext(finishContext);vm.runInContext(source.slice(source.indexOf(' function finishPoster('),source.indexOf(' function renderResult(')),finishContext);finishContext.finishPoster();assert.equal(finishButton.disabled,false);assert.match(finishButton.innerHTML,/挑选我的创意卡片/);
 assert.match(source,/\$\('#save'\)\.addEventListener\('click',completeJourney\)/);
 console.log('PASS: flight completion stays on the route; both normal and reduced motion require the card CTA before opening the packet.');
+
+const {viewportLayout}=require('./app.js');
+for(const native of [false,true])for(const [w,h]of [[390,844],[375,667],[320,568],[430,932],[390,620],[390,740],[844,390]]){
+ const insets={top:0,right:0,bottom:34,left:0},layout=viewportLayout(w,h,insets,native,true);
+ assert.ok(Math.abs(layout.scale*402-w)<.001);assert.ok(Math.abs(layout.scale*layout.height+34-h)<.001);
+ assert.ok(Math.abs(layout.main+(native?0:52)-layout.height)<.001);
+ assert.ok(775*layout.composition<=layout.main+.001);
+}
+assert.equal(viewportLayout(1280,900).mobile,false);assert.equal(viewportLayout(1280,900).composition,1);
+assert.match(source,/if\(\$\('#ad-card'\)\.dataset.adId!==ad.id\)/,'A vote must not recreate the current ad image');
+assert.match(source,/else finishVoteFlight\(\)/);
+console.log('PASS: mobile surface fills both viewport dimensions, artwork remains uniform, browser chrome resizes and WeChat modes fit; ad image persists through focus and return.');

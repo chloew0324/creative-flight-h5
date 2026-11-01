@@ -24,9 +24,9 @@ for(const [width,height] of [[390,844],[375,667],[320,568],[1440,900],[844,390]]
 }
 // Exercise the actual shared rendering/state functions across all six works.
 const source=fs.readFileSync('app.js','utf8'),nodes=new Map(),clones=[];
-function node(){const classes=new Set(),properties={};return {classes,properties,dataset:{},style:{setProperty:(key,value)=>properties[key]=value},classList:{contains:key=>classes.has(key),toggle:(key,on)=>on?classes.add(key):classes.delete(key)},setAttribute(){},append(el){clones.push(el)},remove(){clones.splice(clones.indexOf(this),1)}}}
+function node(){const classes=new Set(),properties={};return {classes,properties,dataset:{},htmlWrites:0,set innerHTML(value){this.html=value;this.htmlWrites++},get innerHTML(){return this.html},style:{setProperty:(key,value)=>properties[key]=value},classList:{contains:key=>classes.has(key),toggle:(key,on)=>on?classes.add(key):classes.delete(key)},setAttribute(){},append(el){clones.push(el)},remove(){clones.splice(clones.indexOf(this),1)}}}
 const app=node(),body=node();
-const context={app,document:{body},state:{index:0,votes:[]},view:'vote',busy:false,syncVoteSurface:()=>{},ADS,votePalette,adOrbitPose,wrapAdIndex,theme:()=>{},heart:p=>p.id,adArtwork:ad=>ad.id,slideStep:()=>343,makeSlide:()=>({...node(),dataset:{}}),$:selector=>{if(!nodes.has(selector))nodes.set(selector,node());return nodes.get(selector)},$$:()=>[...clones]};
+const context={app,document:{body},state:{index:0,votes:[]},view:'vote',busy:false,syncVoteSurface:()=>{},ADS,votePalette,adOrbitPose,wrapAdIndex,theme:()=>{},heart:p=>p.id,adArtwork:ad=>ad.id,slideStep:()=>343,makeSlide:index=>({...node(),dataset:{adId:ADS[index].id}}),$:selector=>{if(!nodes.has(selector))nodes.set(selector,node());return nodes.get(selector)},$$:()=>[...clones]};
 vm.createContext(context);
 for(const [start,end] of [[' function voteFeedback(',' function heart('],[' function renderVote(',' function slideStep('],[' function syncNeighbors(',' function enterAds(']])vm.runInContext(source.slice(source.indexOf(start),source.indexOf(end)),context);
 for(let i=0;i<6;i++){
@@ -36,13 +36,14 @@ for(let i=0;i<6;i++){
  assert.equal(clones.length,2);
  assert.equal(clones[0].style.transform,adOrbitPose(-1,343).transform);
  assert.equal(clones[1].style.transform,adOrbitPose(1,343).transform);
- context.state.votes=[ADS[i].id];context.renderVote();
+ const imageWrites=nodes.get('#ad-image').htmlWrites,oldNeighbors=[...clones];context.state.votes=[ADS[i].id];context.renderVote();
+ assert.equal(nodes.get('#ad-image').htmlWrites,imageWrites,'Voting must preserve the actual ad image node');assert.equal(clones[0],oldNeighbors[0],'Focus return must not replace the neighbouring ad nodes');
  assert.equal(clones.length,2,'Neighbours must be restored after the vote effect without requiring a swipe');
  assert.equal(app.dataset.votePhase,'voted');
  context.setAdBrowsing(true);assert.equal(app.dataset.votePhase,'browsing');assert.equal(clones.length,2);
  context.setAdBrowsing(false);assert.equal(app.dataset.votePhase,'voted');
  nodes.get('#vote').classes.add('flying');context.syncVotePhase();assert.equal(app.dataset.votePhase,'voting');
- nodes.get('#vote').classes.delete('flying');context.syncVotePhase();assert.equal(app.dataset.votePhase,'voted');
+ nodes.get('#vote').classes.delete('flying');nodes.get('#vote').classes.add('returning');context.syncVotePhase();assert.equal(app.dataset.votePhase,'returning');nodes.get('#vote').classes.delete('returning');context.syncVotePhase();assert.equal(app.dataset.votePhase,'voted');
  assert.ok(app.classes.has('vote-feedback')&&body.classes.has('vote-feedback'));
  assert.equal(app.properties['--feedback-top'],votePalette(i).feedbackTop);
  assert.equal(nodes.get('#next').textContent,'下一步');assert.equal(nodes.get('#next').disabled,false);

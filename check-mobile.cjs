@@ -3,7 +3,7 @@ const source=fs.readFileSync('app.js','utf8');
 const gestureCode=source.slice(source.indexOf(' let longPress=0;'),source.indexOf(" document.addEventListener('keydown'"));
 function run(view,start,end,{button=false,cancel=false,scale=1,index=1,phases=[],reducedMotion=false}={}){
  const listeners={},calls=[],capture=new Set();
- const app={clientWidth:402,getBoundingClientRect:()=>({width:402*scale}),addEventListener:(name,fn)=>listeners[name]=fn,setPointerCapture:id=>capture.add(id),hasPointerCapture:id=>capture.has(id),releasePointerCapture:id=>capture.delete(id)};
+ const app={style:{getPropertyValue:()=>''},clientWidth:402,getBoundingClientRect:()=>({width:402*scale}),addEventListener:(name,fn)=>listeners[name]=fn,setPointerCapture:id=>capture.add(id),hasPointerCapture:id=>capture.has(id),releasePointerCapture:id=>capture.delete(id)};
  const context={app,view,busy:false,pointer:null,state:{index},ADS:[1,2,3],Promise:{all:()=>({then:fn=>fn()})},reduced:()=>reducedMotion,clearTimeout:()=>{},setTimeout:()=>1,beginVoting:()=>calls.push('vote'),show:page=>calls.push(page),moveCard:d=>calls.push('card'+d),moveAd:d=>calls.push('ad'+d),setAdBrowsing:active=>phases.push(active),renderVote:()=>{},slideStep:()=>321,adSlideFrames:()=>[],paintDrag:()=>{},$:()=>({dataset:{},animate:()=>{calls.push('animate');return {finished:true}}}),$$:()=>[]};
  vm.createContext(context);vm.runInContext(gestureCode,context);
  const event=(point)=>({clientX:point[0],clientY:point[1],pointerId:1,isPrimary:true,cancelable:true,preventDefault(){},target:{closest:selector=>button&&(selector==='button'||selector==='#start')?{}:null}});

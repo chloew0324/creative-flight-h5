@@ -23,7 +23,7 @@ assert.match(voting,/fold\.style\.transform=`translate3d\(\$\{pos.x-x0\}/);
 assert.match(voting,/posePlane\(material,smooth\(\(elapsed-650\)\/380\),'vote'\)/,'Material is fully present before the wings finish opening');
 assert.match(voting,/if\(!flightReady\)\{drawPaper\(foldEnd\)/,'A skipped frame still finalises wings before flight');
 assert.doesNotMatch(voting,/heartRect/,'Keep the fixed launch area and unified motion');
-assert.match(voting,/heartWidth=120,heartHeight=110/);
+assert.match(voting,/heartWidth=120\*composition,heartHeight=110\*composition/);
 console.log('PASS: approved paper/plane pixels retained in all six choices; contour clips remove screenshot background and ground shadows. Original voting renderer restored, fixed flight origin retained.');
 
 const {wingMatrix,texturePlane,planeCreases}=require('./entry-motion.js');

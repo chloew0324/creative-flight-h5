@@ -37,6 +37,13 @@ function adSlideFrames(from,to,step){return Array.from({length:25},(_,i)=>{
 function previewScale(width,height,insets={top:0,right:0,bottom:0,left:0},referenceHeight=827){
  return Math.max(.01,Math.min(1,(width-insets.left-insets.right)/402,(height-insets.top-insets.bottom-(width>=460?32:0))/referenceHeight));
 }
+// The mobile surface fills the web viewport; artwork keeps one uniform scale inside it.
+function viewportLayout(width,height,insets={top:0,right:0,bottom:0,left:0},nativeWeChat=false,mobile=width<600){
+ const referenceHeight=nativeWeChat?775:827,nav=nativeWeChat?0:52;
+ if(!mobile)return {scale:previewScale(width,height,insets,referenceHeight),height:referenceHeight,main:775,composition:1,mobile:false};
+ const scale=Math.max(.01,(width-insets.left-insets.right)/402),surfaceHeight=Math.max(1,(height-insets.top-insets.bottom)/scale),main=Math.max(1,surfaceHeight-nav);
+ return {scale,height:surfaceHeight,main,composition:Math.min(1,main/775),mobile:true};
+}
 const STANDARDS=['点子新鲜','故事动人','画面好看','文案有梗','互动好玩','细节用心'];
 const CARD_COPY=[
  {line:'把日常，折成意想不到。',quote:'让好奇，带你飞向新鲜。'},
@@ -74,7 +81,7 @@ function voteFlightPath(_index,w,h,x,y){
  const origin={x,y:y-51};
  return {index:0,origin,control1:{x:x+w*.22,y:origin.y-45},control2:{x:w*.98,y:h*.40},destination:{x:w*1.17,y:h*.07},duration:2100,bank:10,pattern:0};
 }
-if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale,AD_CARD_GAP,AD_ORBIT_RADIUS};
+if(typeof module!=='undefined')module.exports={normalizeState,toggleStandard,castVote,cubic,cubicTangent,foldPaper,PAPER_STAGES,ADS,STANDARDS,POSTER_ROUTE,CARD_COPY,voteFlightPath,votePalette,adEntryFrames,adOrbitPose,adSlideFrames,wrapAdIndex,previewScale,viewportLayout,AD_CARD_GAP,AD_ORBIT_RADIUS};
 if(typeof document!=='undefined'){
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=$('#app');
  let entryController=null;
@@ -107,7 +114,7 @@ if(typeof document!=='undefined'){
   syncVotePhase();
  }
  function syncVotePhase(){
-  const vote=$('#vote'),phase=view!=='vote'?'off':vote.classList.contains('entering')?'entry':vote.classList.contains('browsing')?'browsing':vote.classList.contains('flying')?'voting':state.votes.includes(ADS[state.index].id)?'voted':'idle';
+  const vote=$('#vote'),phase=view!=='vote'?'off':vote.classList.contains('entering')?'entry':vote.classList.contains('browsing')?'browsing':vote.classList.contains('flying')?'voting':vote.classList.contains('returning')?'returning':state.votes.includes(ADS[state.index].id)?'voted':'idle';
   app.dataset.votePhase=phase;document.body.dataset.votePhase=phase;syncVoteSurface();
  }
  function setAdBrowsing(active){$('#vote').classList.toggle('browsing',active);syncVotePhase()}
@@ -127,7 +134,7 @@ if(typeof document!=='undefined'){
  function toast(message){clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').classList.add('visible');toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),2300)}
  function announce(message){$('#announcement').textContent=message}
  function closeDialogs(){$$('dialog[open]').forEach(d=>d.close())}
- function stopFlight(){cancelAnimationFrame(frame);frame=0;$('#flight').hidden=true;$('#flight').classList.remove('flight-running');$('#vote').classList.remove('flying');busy=false}
+ function stopFlight(){cancelAnimationFrame(frame);frame=0;$('#flight').hidden=true;$('#flight').classList.remove('flight-running');$('#vote').classList.remove('flying','returning');busy=false}
  function show(next,{entry=false,fly=false}={}){
   if(next==='journey'){next='result';fly=true}
   if(busy&&view==='vote')return;
@@ -149,7 +156,7 @@ if(typeof document!=='undefined'){
  function adArtwork(ad){const {x,y,w,h}=ad.crop;return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" role="img" aria-label="${ad.title}，录屏原广告内容"><image href="${asset(ad.image)}" width="${ad.frameWidth}" height="${ad.frameHeight}"/></svg>`}
  function renderVote(){
   const ad=ADS[state.index],p=votePalette(state.index),voted=state.votes.includes(ad.id);theme(p);voteFeedback(voted,p);
-  $('#ad-title').textContent=ad.title;$('#ad-votes').textContent=(ad.votes+Number(voted)).toLocaleString('en-US');$('#ad-brand').textContent=ad.brand;$('#ad-image').innerHTML=adArtwork(ad);$('#ad-image').setAttribute('aria-label',ad.title);$('#vote-count').textContent=state.votes.length;
+  $('#ad-title').textContent=ad.title;$('#ad-votes').textContent=(ad.votes+Number(voted)).toLocaleString('en-US');$('#ad-brand').textContent=ad.brand;if($('#ad-card').dataset.adId!==ad.id){$('#ad-image').innerHTML=adArtwork(ad);$('#ad-image').setAttribute('aria-label',ad.title);$('#ad-card').dataset.adId=ad.id;}$('#vote-count').textContent=state.votes.length;
   $('#ad-history').textContent=ad.id==='porsche'?'你去年为保时捷投过票':ad.id==='gucci'?'你去年为GUCCI投过票':'';
   $('#vote-heart').innerHTML=heart(p);$('#vote-button').hidden=voted;$('#vote-button').disabled=busy;$('#voted').hidden=!voted;$('.voted-icon').innerHTML=heart(p);$('#next').disabled=!state.votes.length||busy;
   $('#next').textContent=state.votes.length?'下一步':'快去投票';
@@ -157,12 +164,13 @@ if(typeof document!=='undefined'){
  }
  function slideStep(){return $('#ad-card').offsetWidth+AD_CARD_GAP}
  function makeSlide(index){
-  const ad=ADS[index],p=votePalette(index),clone=$('#ad-card').cloneNode(true),voted=state.votes.includes(ad.id);
+  const ad=ADS[index],p=votePalette(index),clone=$('#ad-card').cloneNode(true),voted=state.votes.includes(ad.id);clone.dataset.adId=ad.id;
   clone.querySelector('#ad-image').innerHTML=adArtwork(ad);clone.querySelector('#vote-heart').innerHTML=heart(p);clone.querySelector('#ad-brand').textContent=ad.brand;clone.querySelector('#vote-button').hidden=voted;clone.querySelector('#voted').hidden=!voted;clone.querySelector('#voted').classList.add('voted-state');clone.querySelector('.voted-icon').innerHTML=heart(p);
   for(const node of [clone,...clone.querySelectorAll('[id]')])node.removeAttribute('id');clone.className='ad-card ad-clone';clone.style.transform='';clone.setAttribute('aria-hidden','true');clone.inert=true;clone.style.setProperty('--accent',p.main);clone.style.setProperty('--dark',p.dark);return clone;
  }
  function syncNeighbors(){
-  $$('.ad-clone').forEach(el=>el.remove());
+  const existing=$$('.ad-clone');if(existing.length===2&&existing.every(el=>el.dataset.adId===ADS[wrapAdIndex(state.index+Number(el.dataset.direction))].id))return;
+  existing.forEach(el=>el.remove());
   const step=slideStep();for(const direction of [-1,1]){const slide=makeSlide(wrapAdIndex(state.index+direction));slide.dataset.direction=direction;slide.style.transform=adOrbitPose(direction,step).transform;$('#carousel').append(slide)}
  }
  function enterAds(){
@@ -188,12 +196,12 @@ if(typeof document!=='undefined'){
   if(busy||view!=='vote')return;
   if(reduced()){renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票。');toast('喜欢，已启航。');return}
   busy=true;const p=votePalette(state.index),overlay=$('#flight'),fold=$('#fold-heart'),canvas=$('#flight-canvas'),ctx=canvas.getContext('2d');
-  const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,coordinateScale=w/bounds.width,heartWidth=120,heartHeight=110,x0=(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=(launch.y-bounds.y+launch.height/2)*coordinateScale-top;
+  const launch=$('.heart-area').getBoundingClientRect(),bounds=app.getBoundingClientRect(),top=$('.wechat').offsetHeight,w=app.clientWidth,h=app.clientHeight-top,coordinateScale=w/bounds.width,composition=Number(app.style.getPropertyValue('--composition-scale'))||1,heartWidth=120*composition,heartHeight=110*composition,x0=(launch.x-bounds.x+launch.width/2)*coordinateScale,y0=(launch.y-bounds.y+launch.height/2)*coordinateScale-top;
   const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   fold.style.width=heartWidth+'px';fold.style.height=heartHeight+'px';fold.style.left=x0-heartWidth/2+'px';fold.style.top=y0-heartHeight/2+'px';fold.style.opacity='1';fold.style.transform='none';
   fold.innerHTML=`<svg class="folding-paper" viewBox="0 0 180 160" aria-hidden="true"><g class="fold-vector">${Array.from({length:10},()=>'<polygon stroke="white" stroke-opacity=".24" stroke-width=".55" stroke-linejoin="round"/>').join('')}<path class="paper-outline" fill="none" stroke="white" stroke-opacity=".68" stroke-width=".7" stroke-linejoin="round"/><path class="paper-crease" fill="none" stroke="${p.ink}" stroke-opacity=".22" stroke-width=".7"/></g><g class="fold-material">${globalThis.FLIGHT_ENTRY.texturePlane(plane(p),'vote')}</g></svg>`;
   const faces=[...fold.querySelectorAll('.fold-vector polygon')],outline=fold.querySelector('.paper-outline'),crease=fold.querySelector('.paper-crease'),vector=fold.querySelector('.fold-vector'),material=fold.querySelector('.fold-material');
-  $('#flight-copy').style.top='85px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
+  $('#flight-copy').style.top=((($('.vote-heading').getBoundingClientRect().top-bounds.top)*coordinateScale-top)+24*composition)+'px';$('#flight-copy span').textContent='把喜欢，折成远方。';$('#flight-copy small').textContent='';
   overlay.hidden=false;overlay.classList.remove('flight-running');void overlay.offsetWidth;overlay.classList.add('flight-running');$('#vote').classList.add('flying');renderVote();
   const profile=voteFlightPath(state.index,w,h,x0,y0),{origin,control1,control2,destination}=profile;overlay.dataset.flightVariant=String(profile.index);canvas.dataset.effect=['paper-petals','prism-glints','wind-orbits'][profile.pattern];
   const trail=[],sparks=[],start=performance.now(),steps=[{at:0,duration:210},{at:210,duration:220},{at:430,duration:260},{at:690,duration:340}],foldEnd=1030,takeoffAt=1130,flightDuration=profile.duration,smooth=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t)};let lastSpark=0,flightReady=false;
@@ -244,9 +252,14 @@ if(typeof document!=='undefined'){
    }
    for(let i=sparks.length-1;i>=0;i--){const s=sparks[i],age=now-s.born,t=age/1000;if(age>s.life){sparks.splice(i,1);continue}const alpha=(1-age/s.life)*.75,x=s.x+s.vx*t,y=s.y+s.vy*t;ctx.globalAlpha=alpha;ctx.fillStyle=i%4===0?'#fff':p.main;ctx.beginPath();if(s.star){ctx.moveTo(x,y-s.size*2.2);ctx.quadraticCurveTo(x+.5,y-.5,x+s.size*2.2,y);ctx.quadraticCurveTo(x+.5,y+.5,x,y+s.size*2.2);ctx.quadraticCurveTo(x-.5,y+.5,x-s.size*2.2,y);ctx.quadraticCurveTo(x-.5,y-.5,x,y-s.size*2.2)}else ctx.arc(x,y,s.size,0,Math.PI*2);ctx.fill()}
    ctx.globalAlpha=1;
-   if(elapsed<takeoffAt+flightDuration+370)frame=requestAnimationFrame(draw);else{stopFlight();renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票，可以继续浏览或进入下一步。')}
+   if(elapsed<takeoffAt+flightDuration+370)frame=requestAnimationFrame(draw);else finishVoteFlight();
   }
   frame=requestAnimationFrame(draw);
+ }
+ function finishVoteFlight(){
+  frame=0;$('#flight').hidden=true;$('#flight').classList.remove('flight-running');
+  $('#vote').classList.add('returning');$('#vote').classList.remove('flying');syncVotePhase();
+  transitionTimer=setTimeout(()=>{$('#vote').classList.remove('returning');busy=false;renderVote();announce('喜欢，已启航。已投'+state.votes.length+'票，可以继续浏览或进入下一步。')},650);
  }
  // Preserve the approved source pixels; clip only the outer background and baked ground shadow.
  function choiceMaterial(kind,index,{home=false}={}){
@@ -388,9 +401,9 @@ if(typeof document!=='undefined'){
  $$('[data-action="rules"]').forEach(button=>button.addEventListener('click',()=>{closeDialogs();$('#rules-dialog').showModal()}));$$('dialog .close').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));$$('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close()}}));
  let longPress=0;
  app.addEventListener('pointerdown',event=>{if(busy||event.isPrimary===false||event.target.closest('dialog')||(event.target.closest('button')&&!(view==='cover'&&event.target.closest('#start'))))return;pointer={x:event.clientX,y:event.clientY,id:event.pointerId,dx:0,dragging:false};if(view==='cards'&&event.target.closest('#keepsake-preview'))longPress=setTimeout(()=>{pointer=null;downloadArtwork('card',$('#save-card'))},650)});
- app.addEventListener('pointermove',event=>{if(!pointer||pointer.id!==event.pointerId)return;const ratio=app.clientWidth/app.getBoundingClientRect().width;let dx=(event.clientX-pointer.x)*ratio,dy=(event.clientY-pointer.y)*ratio;if(Math.hypot(dx,dy)>8){clearTimeout(longPress);if(view==='cover'||view==='cards'){app.setPointerCapture(event.pointerId);if(event.cancelable)event.preventDefault()}}if(view!=='vote')return;if(!pointer.dragging){if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){pointer=null;return}if(Math.abs(dx)<8||Math.abs(dx)<Math.abs(dy))return;pointer.dragging=true;setAdBrowsing(true);app.setPointerCapture(event.pointerId)}pointer.dx=dx;paintDrag(dx)});
+ app.addEventListener('pointermove',event=>{if(!pointer||pointer.id!==event.pointerId)return;const ratio=app.clientWidth/app.getBoundingClientRect().width/(Number(app.style.getPropertyValue('--composition-scale'))||1);let dx=(event.clientX-pointer.x)*ratio,dy=(event.clientY-pointer.y)*ratio;if(Math.hypot(dx,dy)>8){clearTimeout(longPress);if(view==='cover'||view==='cards'){app.setPointerCapture(event.pointerId);if(event.cancelable)event.preventDefault()}}if(view!=='vote')return;if(!pointer.dragging){if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){pointer=null;return}if(Math.abs(dx)<8||Math.abs(dx)<Math.abs(dy))return;pointer.dragging=true;setAdBrowsing(true);app.setPointerCapture(event.pointerId)}pointer.dx=dx;paintDrag(dx)});
  function releasePointer(event,cancelled=false){
-  clearTimeout(longPress);if(!pointer||pointer.id!==event.pointerId)return;const drag=pointer,ratio=app.clientWidth/app.getBoundingClientRect().width,dx=(event.clientX-drag.x)*ratio,dy=(event.clientY-drag.y)*ratio;pointer=null;if(app.hasPointerCapture(event.pointerId))app.releasePointerCapture(event.pointerId);
+  clearTimeout(longPress);if(!pointer||pointer.id!==event.pointerId)return;const drag=pointer,ratio=app.clientWidth/app.getBoundingClientRect().width/(Number(app.style.getPropertyValue('--composition-scale'))||1),dx=(event.clientX-drag.x)*ratio,dy=(event.clientY-drag.y)*ratio;pointer=null;if(app.hasPointerCapture(event.pointerId))app.releasePointerCapture(event.pointerId);
   if(!cancelled&&view==='cover'&&dy< -35&&Math.abs(dy)>Math.abs(dx)){event.preventDefault();beginVoting();return}
   if(!cancelled&&view==='cards'){if(Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy))moveCard(dx<0?1:-1);else if(dy< -40)show('gift');return}
   if(view!=='vote')return;const direction=drag.dx<0?1:-1;if(drag.dragging&&!cancelled&&Math.abs(drag.dx)>45){pointer=drag;moveAd(direction);return}
@@ -401,7 +414,12 @@ if(typeof document!=='undefined'){
  $('#cover').addEventListener('wheel',event=>{if(event.deltaY>30&&view==='cover'&&!busy)beginVoting()},{passive:true});
  $('#cards').addEventListener('wheel',event=>{if(event.deltaY>40&&view==='cards')show('gift')},{passive:true});
  window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);cancelAnimationFrame(journeyFrame)});
- function fitPreview(){const height=window.visualViewport?.height||window.innerHeight,style=getComputedStyle(document.documentElement),insets=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,parseFloat(style.getPropertyValue('--safe-'+side))||0]));app.style.setProperty('--preview-scale',String(previewScale(window.innerWidth,height,insets,document.documentElement.classList.contains('native-wechat')?775:827)))}
+ function fitPreview(){
+  const viewport=window.visualViewport,width=viewport?.width||window.innerWidth,height=viewport?.height||window.innerHeight,root=document.documentElement,style=getComputedStyle(root),insets=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,parseFloat(style.getPropertyValue('--safe-'+side))||0]));
+  const layout=viewportLayout(width,height,insets,root.classList.contains('native-wechat'),matchMedia('(max-width:599px), (hover:none) and (pointer:coarse)').matches);
+  root.classList.toggle('viewport-fill',layout.mobile);root.style.setProperty('--viewport-height',height+'px');
+  app.style.setProperty('--preview-scale',String(layout.scale));app.style.setProperty('--reference-height',layout.height+'px');app.style.setProperty('--layout-main',layout.main+'px');app.style.setProperty('--composition-scale',String(layout.composition));
+ }
  window.addEventListener('resize',fitPreview);window.visualViewport?.addEventListener('resize',fitPreview);fitPreview();
  const entryURL=new URL(location.href);
  if(entryURL.searchParams.has('view')){entryURL.searchParams.delete('view');history.replaceState(null,'',entryURL)}

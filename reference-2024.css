@@ -187,9 +187,10 @@ body.vote-view { background:var(--feedback-bottom); }
 .phone[data-vote-phase="voting"] .ad-clone { opacity:0;visibility:hidden; }
 .phone.vote-feedback #vote.browsing .ad-clone { opacity:1;visibility:visible; }
 .vote.flying .ad-image { opacity:1;transition:none; }
-.vote .ad-card { transition:translate .4s ease,scale .4s ease; }
+.vote .ad-card { translate:0 0;scale:1;transition:translate 650ms cubic-bezier(.22,.61,.36,1),scale 650ms cubic-bezier(.22,.61,.36,1); }
 .vote.flying #ad-card { transform-origin:50% 0;translate:0 -14px;scale:1.035; }
-.vote.flying .vote-heading { opacity:0;transition:opacity .25s; }
+.vote .vote-heading { transition:opacity 350ms ease; }
+.vote.flying .vote-heading { opacity:0; }
 .phone.vote-feedback .vote-bottom b { color:var(--accent); }
 .vote.entering .ad-card { transform-origin:50% 0; }
 .vote.entering .vote-heading,.vote.entering .heart-area,.vote.entering .vote-bottom { animation:appear .35s 2.25s both; }
@@ -466,3 +467,16 @@ body.vote-view,body.vote-feedback,body.vote-feedback[data-vote-phase="voting"] {
 .vote .heart-area::after { content:"";position:absolute;top:102px;left:50%;width:48px;height:6px;transform:translateX(-50%);border-radius:50%;background:var(--accent);opacity:.13;filter:blur(.3px);pointer-events:none;transition:opacity 220ms ease; }
 .vote.flying .heart-area::after { opacity:0; }
 @media(prefers-reduced-motion:reduce){.vote .heart-area::after{transition:none}}
+
+/* Fill the actual mobile web area, independently of the artwork's aspect ratio. */
+.viewport-fill body { height:var(--viewport-height,100dvh);min-height:0;overflow:hidden;padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);background:#fff; }
+.viewport-fill .phone,.viewport-fill .phone[data-view="result"],.viewport-fill .phone[data-view="cards"] { border-radius:0;box-shadow:none; }
+.viewport-fill .phone > main { height:var(--layout-main);overflow:hidden; }
+.viewport-fill .phone > main > .page { position:absolute;top:50%;left:50%;width:402px;height:775px;min-height:775px;transform:translate(-50%,-50%) scale(var(--composition-scale,1));transform-origin:50% 50%; }
+.viewport-fill .phone > main > #gift { position:relative;top:0;left:0;height:var(--layout-main);min-height:0;transform:none; }
+/* Side cards stay mounted while focus eases out and the same ad returns. */
+.vote .ad-clone { transition:opacity 300ms ease,visibility 0s; }
+.phone[data-vote-phase="voting"] .ad-clone { transition:opacity 220ms ease,visibility 0s 220ms; }
+.phone[data-vote-phase="returning"] .ad-clone { opacity:1;visibility:visible;transition:opacity 400ms 120ms ease,visibility 0s; }
+
+.viewport-fill .phone > main > #vote,.viewport-fill .phone > main > #cards { overflow:visible; }
